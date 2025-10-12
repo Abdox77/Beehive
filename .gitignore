@@ -9,13 +9,28 @@
 .todoS
 UI-design/
 
-node_modules/
+/config/jwt/*.pem
+/phpunit.xml
+/phpunit.xml.dist
+/coverage/
+/clover.xml
 
-vars/
+/backend/migrations/.latest.php
+
+/frontend/dist/
+/frontend/tmp
+.angular/
+npm-debug.log
+yarn-error.log
+
+node_modules/
+vendor/
+var/
 *.log
 *.local.json
 config/*.json
 **/config.json
 logs/
 
-.angular/
+*.db
+
