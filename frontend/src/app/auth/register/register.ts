@@ -18,7 +18,7 @@ import { AuthService } from '../services/auth.service';
 export class RegisterComponent {
     registerForm: FormGroup;
     loading = false;
-    error = '';
+    error : null | string = null;
 
     constructor(
         private formBuilder: FormBuilder,
@@ -46,7 +46,7 @@ export class RegisterComponent {
         if (this.registerForm.invalid) return;
 
         this.loading = true;
-        this.error = '';
+        this.error = null;
 
         const { fullName, email, password } = this.registerForm.value;
 

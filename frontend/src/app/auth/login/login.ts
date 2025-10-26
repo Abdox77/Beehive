@@ -19,7 +19,7 @@ import { CommonModule } from '@angular/common';
 })
 export class LoginComponent {
     loginForm: FormGroup;
-    error = '';
+    error : string | null = null;
     loading = false;
 
     constructor(
@@ -37,7 +37,7 @@ export class LoginComponent {
         if (this.loginForm.invalid) return;
 
         this.loading = true;
-        this.error = '';
+        this.error = null;
 
         const { email, password } = this.loginForm.value;
 

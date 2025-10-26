@@ -11,9 +11,12 @@
       <p class="text-sm text-black/60 dark:text-white/60 mt-2">Log in to manage your beekeeping operation.</p>
     </div>
     
-    <div *ngIf="error" class="p-4 rounded-lg bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 text-red-700 dark:text-red-300 text-sm">
-      <strong>Error:</strong> {{ error }}
-    </div>
+    @if (error) {
+        <div class="p-4 rounded-lg bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 text-red-700 dark:text-red-300 text-sm">
+        <strong>Error:</strong> {{ error }}
+        </div> 
+    }
+    
     
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
       <div>
@@ -27,10 +30,17 @@
             class="form-input w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-black/20 dark:border-white/20 focus:ring-primary focus:border-primary text-black dark:text-white"
             required 
           />
-          <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="text-red-500 text-sm mt-1">
-            <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</span>
-            <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+        
+          @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+          <div class="text-red-500 text-sm mt-1">
+            @if (loginForm.get('email')?.errors?.['required']){
+                <span >Email is required</span>
+            }
+            @if (loginForm.get('email')?.errors?.['email']) {
+                <span >Please enter a valid email</span>
+            }
           </div>
+        }
         </div>
       </div>
       
@@ -45,9 +55,12 @@
             class="form-input w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-black/20 dark:border-white/20 focus:ring-primary focus:border-primary text-black dark:text-white"
             required 
           />
-          <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="text-red-500 text-sm mt-1">
+        
+          @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+          <div class="text-red-500 text-sm mt-1">
             Password is required
           </div>
+        }
         </div>
       </div>
       
@@ -65,8 +78,11 @@
           [disabled]="loginForm.invalid || loading"
           class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-black bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background-light dark:focus:ring-offset-background-dark"
         >
-          <span *ngIf="loading">Processing...</span>
-          <span *ngIf="!loading">Login</span>
+        @if (loading) {
+          <span>Processing...</span>
+        } @else {
+          <span>Login</span>
+        }
         </button>
       </div>
     </form>
