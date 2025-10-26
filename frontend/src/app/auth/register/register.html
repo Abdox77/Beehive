@@ -13,10 +13,11 @@
         <a routerLink="/auth/login" class="font-medium text-primary hover:text-primary/80">Log in</a>
       </p>
     </div>
-    
-    <div *ngIf="error" class="p-4 rounded-lg bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 text-red-700 dark:text-red-300 text-sm">
-      <strong>Error:</strong> {{ error }}
-    </div>
+    @if (error !== null) {
+        <div class="p-4 rounded-lg bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 text-red-700 dark:text-red-300 text-sm">
+            <strong>Error:</strong> {{ error }}
+        </div>
+    }
     
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
       <div>
@@ -29,9 +30,11 @@
             class="form-input w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-black/20 dark:border-white/20 focus:ring-primary focus:border-primary text-black dark:text-white"
             required 
           />
-          <div *ngIf="registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched" class="text-red-500 text-sm mt-1">
+        @if (registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched) {
+          <div class="text-red-500 text-sm mt-1">
             Full name is required
           </div>
+        }
         </div>
       </div>
       
@@ -46,10 +49,17 @@
             class="form-input w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-black/20 dark:border-white/20 focus:ring-primary focus:border-primary text-black dark:text-white"
             required 
           />
-          <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="text-red-500 text-sm mt-1">
-            <span *ngIf="registerForm.get('email')?.errors?.['required']">Email is required</span>
-            <span *ngIf="registerForm.get('email')?.errors?.['email']">Please enter a valid email</span>
-          </div>
+          @if (registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched) {
+            <div class="text-red-500 text-sm mt-1">
+                @if (registerForm.get('email')?.errors?.['required']) {
+                    <span>Email is required</span>
+                }
+                
+                @if (registerForm.get('email')?.errors?.['email']){
+                    <span>Please enter a valid email</span>
+                }
+            </div>
+            }
         </div>
       </div>
       
@@ -64,10 +74,17 @@
             class="form-input w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-black/20 dark:border-white/20 focus:ring-primary focus:border-primary text-black dark:text-white"
             required 
           />
-          <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="text-red-500 text-sm mt-1">
-            <span *ngIf="registerForm.get('password')?.errors?.['required']">Password is required</span>
-            <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</span>
-          </div>
+          @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+            <div class="text-red-500 text-sm mt-1">
+                @if(registerForm.get('password')?.errors?.['required']){
+                    <span>Password is required</span>
+                }
+                
+                @if (registerForm.get('password')?.errors?.['minlength']) {
+                    <span>Password must be at least 8 characters</span>
+                }
+            </div>
+            }
         </div>
       </div>
       
@@ -82,12 +99,17 @@
             class="form-input w-full px-4 py-3 rounded-lg bg-background-light dark:bg-background-dark border border-black/20 dark:border-white/20 focus:ring-primary focus:border-primary text-black dark:text-white"
             required 
           />
-          <div *ngIf="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched" class="text-red-500 text-sm mt-1">
-            Confirm password is required
-          </div>
-          <div *ngIf="registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched" class="text-red-500 text-sm mt-1">
-            Passwords don't match
-          </div>
+            @if (registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched){
+                <div class="text-red-500 text-sm mt-1">
+                    Confirm password is required
+                </div>
+            }
+
+            @if (registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched) {
+                <div class="text-red-500 text-sm mt-1">
+                    Passwords don't match
+                </div>
+            }
         </div>
       </div>
       
@@ -97,11 +119,13 @@
           [disabled]="registerForm.invalid || loading"
           class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-black bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background-light dark:focus:ring-offset-background-dark"
         >
-          <span *ngIf="loading">Processing...</span>
-          <span *ngIf="!loading">Register</span>
+        @if (loading) {
+          <span>Processing...</span>
+        } @else {
+          <span>Register</span>
+        }
         </button>
       </div>
     </form>
   </div>
 </div>
-
