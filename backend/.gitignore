@@ -20,7 +20,7 @@
 ###< symfony/asset-mapper ###
 
 /config/jwt/private.pem
-
+migrations/*
 .idea/
 .DS_Store
 .vs_code
