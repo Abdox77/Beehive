@@ -44,8 +44,24 @@ export class LoginComponent {
         this.authService.login(email, password)
             .pipe(finalize(() => this.loading = false))
             .subscribe({
-                next: () => this.router.navigate(['/dashboard']),
+                next: res => this.collectAndStoreToken(res),
                 error: err => this.error = err.error?.message || 'Login failed'
             });
+            // .subscribe({
+            //     next: () => this.router.navigate(['/dashboard']),
+            //     error: err => this.error = err.error?.message || 'Login failed'
+            // });
+    }
+
+    collectAndStoreToken(res: any) {
+        const token = res?.token;
+        if (token) {
+            console.log(`logged in and the token is : ${token}`);
+            localStorage.setItem('token', res['token']);
+            this.router.navigate(['/dashboard']);
+        }
+        else {
+            this.error = 'No token in response';
+        }
     }
 }

@@ -58,6 +58,10 @@ class JwtManager {
         // $this->logger->debug('Payload keys', [
         //     'keys' => array_keys($payload ?? []),
         // ]);
+        if (!isset($payload['exp']) || !isset($payload['iat']))
+        {
+            return false;
+        }
 
         if ($payload['exp'] < time())
         {

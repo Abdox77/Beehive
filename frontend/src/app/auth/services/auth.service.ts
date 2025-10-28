@@ -7,8 +7,9 @@ export interface User {
     id: number;
     email: string;
     name?: string;
-    role?: string;
 }
+
+const BACKEND_URL = 'http://127.0.0.1:8000'
 
 @Injectable({
   providedIn: 'root'
@@ -37,14 +38,11 @@ export class AuthService {
      * @returns Observable<User>
      */
     login(email: string, password: string): Observable<User> {
-
-      console.log('login', email, password);
         const body =  {
-          email: email || 'abdessamad@gmail.com',
-          password: password ||  '123456'
+          email: email,
+          password: password
         }
-
-        return this.http.post<User>('https://127.0.0.1:8000/api/auth/login', body)
+        return this.http.post<User>(`${BACKEND_URL}/api/auth/login`, body)
         .pipe(tap(user => this.storeUserData(user)));
     }
 
@@ -59,7 +57,7 @@ export class AuthService {
      * @returns
      */
     register(userData: any): Observable<any> {
-        return this.http.post<any>('/api/auth/register', userData).
+        return this.http.post<any>(`${BACKEND_URL}/api/auth/register`, userData).
         pipe(tap(user => this.storeUserData(user)));
     }
 
