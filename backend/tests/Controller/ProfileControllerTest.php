@@ -4,12 +4,12 @@ namespace App\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class RegistrationControllerTest extends WebTestCase
+final class ProfileControllerTest extends WebTestCase
 {
     public function testIndex(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/registration');
+        $client->request('GET', '/profile');
 
         self::assertResponseIsSuccessful();
     }

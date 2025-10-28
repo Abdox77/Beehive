@@ -3,12 +3,14 @@ FRONTEND_DIR = frontend
 BACKEND_DIR = backend
 
 
+all: front back
+
 install:
 	cd $(FRONTEND_DIR) && npm install
 	cd $(BACKEND_DIR) && composer install
 
 front:
-	cd $(FRONTEND_DIR) && ng serve
+	cd $(FRONTEND_DIR) && npm start
 
 back:
 	cd $(BACKEND_DIR) && symfony serve

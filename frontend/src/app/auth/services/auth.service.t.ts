@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 import { Observable, BehaviorSubject } from 'rxjs';
 
+
 export interface User {
     id: number;
     email: string;
@@ -10,8 +11,9 @@ export interface User {
     role?: string;
 }
 
+
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root'  
 })
 export class AuthService {
     private readonly STORAGE_KEY = 'currentUser';
@@ -20,31 +22,28 @@ export class AuthService {
 
     constructor(private http: HttpClient) {
         const user = localStorage.getItem(this.STORAGE_KEY);
-        if (user) {
+        if(user) {
             try {
                 this.currentUserSubject.next(JSON.parse(user) as User);
-            }
-            catch {
+            }   catch {
                 localStorage.removeItem(this.STORAGE_KEY);
             }
         }
     }
 
-    /**
-     *
-     * @param email
-     * @param password
-     * @returns Observable<User>
-     */
-    login(email: string, password: string): Observable<User> {
+    login(email: string, password: string): Observable<any> {
+        return this.http.post<any>('/api/auth/login', { email, password })
+        .pipe(tap(user => this.storeUserData(user)));
+    }
 
-      console.log('login', email, password);
-        const body =  {
-          email: email || 'abdessamad@gmail.com',
-          password: password ||  '123456'
-        }
+    private storeUserData(user: any) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+        this.currentUserSubject.next(user);
+    }
 
-        return this.http.post<User>('https://127.0.0.1:8000/api/auth/login', body)
+
+    register(userData: any): Observable<any> {
+        return this.http.post<any>('/api/auth/register', userData)
         .pipe(tap(user => this.storeUserData(user)));
     }
 
@@ -53,23 +52,7 @@ export class AuthService {
         this.currentUserSubject.next(null);
     }
 
-    /**
-     *
-     * @param userData
-     * @returns
-     */
-    register(userData: any): Observable<any> {
-        return this.http.post<any>('/api/auth/register', userData).
-        pipe(tap(user => this.storeUserData(user)));
-    }
-
-
-    private storeUserData(user: any) {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-        this.currentUserSubject.next(user);
-    }
-
-    get isLoggerdIn() : boolean {
+    get isLoggedIn(): boolean {
         return !!this.currentUserSubject.value;
     }
 }
