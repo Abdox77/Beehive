@@ -5,7 +5,7 @@ import { authGuard } from './auth/guards/auth-guard';
 export const routes: Routes = [ 
     { 
         path: 'auth',
-        loadChildren: () => import('./auth/auth-module').then(m => m.AuthModule)
+        loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
     },
     {
         path: '',
@@ -14,10 +14,9 @@ export const routes: Routes = [
     },
     {
         path: 'dashboard',
-        loadComponent: () => import('./pages/dashboard/dashboard-module').then(m => m.DashboardModule), 
-        canActivate: [authGuard]
+        canMatch: [authGuard],
+        loadChildren: () => import('./pages/dashboard/dashboard-module').then(m => m.DashboardModule),
+        runGuardsAndResolvers: 'always'
     },
-    {
-        path: '**', redirectTo: '/dashboard'
-    }
+    { path: '**', redirectTo: '/dashboard' }
 ];

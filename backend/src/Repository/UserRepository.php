@@ -2,19 +2,31 @@
 
 namespace App\Repository;
 
-use App\Entity\UserEntity;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<UserEntity>
+ * @extends ServiceEntityRepository<User>
  */
-class UserEntityRepository extends ServiceEntityRepository
+class UserRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, UserEntity::class);
+        parent::__construct($registry, User::class);
     }
+
+
+    public function findUserByEmail(string $email): ?User
+    {
+        try {
+            $user = $this->findOneBy(["email"=> $email]);
+        }
+        catch (\Throwable $e) {
+            return null;
+        }
+    }
+
 
     //    /**
     //     * @return UserEntity[] Returns an array of UserEntity objects
