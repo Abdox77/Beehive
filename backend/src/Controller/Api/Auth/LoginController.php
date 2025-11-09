@@ -23,7 +23,7 @@ final class LoginController extends AbstractController
         private EntityManagerInterface $em) 
     { }
 
-    #[Route(path:'/login', name:'login', methods: ['POST'])]
+    #[Route(path:'/login', name:'_login', methods: ['POST'])]
     public function login(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -63,9 +63,9 @@ final class LoginController extends AbstractController
     /**
      * to refresh the token, to implement later on
      */
-    #[Route(path:'/refresh', name:'', methods: [])]
-    public function refresh(Request $request) {
+    // #[Route(path:'/refresh', name:'')]
+    // public function refresh(Request $request) {
         
-    }
+    // }
 }
 

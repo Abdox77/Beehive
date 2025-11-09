@@ -47,10 +47,6 @@ export class LoginComponent {
                 next: res => this.collectAndStoreToken(res),
                 error: err => this.error = err.error?.message || 'Login failed'
             });
-            // .subscribe({
-            //     next: () => this.router.navigate(['/dashboard']),
-            //     error: err => this.error = err.error?.message || 'Login failed'
-            // });
     }
 
     collectAndStoreToken(res: any) {
