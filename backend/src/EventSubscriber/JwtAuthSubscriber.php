@@ -25,6 +25,12 @@ final class JwtAuthSubscriber implements EventSubscriberInterface
     public function onController(ControllerEvent $event): void
     {
         $request = $event->getRequest();
+        $this->logger->debug('Request Headers', [
+            'method' => $request->getMethod(),
+            'uri' => $request->getUri(),
+            'headers'=> $request->headers->all()
+        ]);
+
         if ($request->isMethod('OPTIONS'))
         { 
             return;
@@ -36,7 +42,7 @@ final class JwtAuthSubscriber implements EventSubscriberInterface
             $ref = new \ReflectionClass($controller);
             $needAuth = \count($ref->getAttributes(Authenticated::class)) > 0;
             
-            // $this->logger->info('the array controller is empty, and the getAttributes is ');
+            $this->logger->info('the array controller is empty, and the getAttributes is ');
             // $this->logger->info($ref->getAttributes(Authenticated::class));
         }
         else

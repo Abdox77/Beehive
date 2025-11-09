@@ -48,6 +48,7 @@ export class AuthService {
     }
 
     logout() {
+        console.log('got to the authservice');
         localStorage.removeItem(this.STORAGE_KEY);
         this.currentUserSubject.next(null);
     }
