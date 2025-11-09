@@ -28,7 +28,8 @@ final class JwtAuthSubscriber implements EventSubscriberInterface
         $this->logger->debug('Request Headers', [
             'method' => $request->getMethod(),
             'uri' => $request->getUri(),
-            'headers'=> $request->headers->all()
+            'headers'=> $request->headers->all(),
+            'Body' => $request->getContent()
         ]);
 
         if ($request->isMethod('OPTIONS'))
@@ -85,11 +86,10 @@ final class JwtAuthSubscriber implements EventSubscriberInterface
         }
 
         $claims = $this->jwt->decodeToken($token) ?? [];
+        $this->logger->debug('jwt_email'.'   '.($claims['jwt_email'] ?? 'empty'));
         $request->attributes->set('jwt_claims', $claims);
-        $request->attributes->set('jwt_usr_id', $claims['sub'] ?? null);
-        $request->attributes->set('jwt_email', $claims['email'] ?? null);
-
-        
+        $request->attributes->set('jwt_usr_id', $claims['jwt_usr_id'] ?? null);
+        $request->attributes->set('jwt_email', $claims['jwt_email'] ?? null);
     }
 
     private function getBearerToken(Request $request): ?string

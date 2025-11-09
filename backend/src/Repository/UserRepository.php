@@ -25,6 +25,7 @@ class UserRepository extends ServiceEntityRepository
         catch (\Throwable $e) {
             return null;
         }
+        return $user;
     }
 
 
