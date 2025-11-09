@@ -24,4 +24,4 @@ migrations/*
 .idea/
 .DS_Store
 .vs_code
-
+.thoughts
