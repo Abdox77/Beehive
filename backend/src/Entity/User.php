@@ -3,7 +3,10 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Table(name:"app_user")]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -13,6 +16,7 @@ class User
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->hives = new ArrayCollection();
     }
 
     #[ORM\Id]
@@ -31,6 +35,10 @@ class User
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
+
+    #[ORM\OneToMany(mappedBy:"owner", targetEntity: Hive::class, orphanRemoval: true)]
+    private Collection $hives;
+
 
     public function getId(): int
     {
@@ -87,4 +95,23 @@ class User
         $this->email = $email;
     }
 
+    public function getHives(): ?Collection {
+        return $this->hives ?? [];
+    }
+
+    public function addHive(Hive $hive): static {
+        if (!$this->hives->contains($hive)) {
+            $this->hives->add($hive);
+            $hive->setOwner($this);
+        }
+        return $this;
+    }
+
+    public function removeHive(Hive $hive): static {
+        if ($this->hives->contains($hive)) {
+            $this->hives->removeElement($hive);
+            $hive->setOwner(null);
+        }
+        return $this;
+    }
 }

@@ -6,6 +6,7 @@
 .env.*.local
 
 .thoughts
+./backend/.thoughts
 .todoS
 UI-design/
 
