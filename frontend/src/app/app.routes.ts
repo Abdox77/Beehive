@@ -15,7 +15,7 @@ export const routes: Routes = [
     {
         path: 'dashboard',
         canMatch: [authGuard],
-        loadChildren: () => import('./pages/dashboard/dashboard-module').then(m => m.DashboardModule),
+        loadChildren: () => import('./components/dashboard/dashboard-module').then(m => m.DashboardModule),
         runGuardsAndResolvers: 'always'
     },
     { path: '**', redirectTo: '/dashboard' }
