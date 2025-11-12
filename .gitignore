@@ -9,6 +9,8 @@
 ./backend/.thoughts
 .todoS
 UI-design/
+subject.pdf
+
 
 /config/jwt/*.pem
 /phpunit.xml

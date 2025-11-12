@@ -1,0 +1,19 @@
+.fixed.inset-0 {
+  z-index: 9999 !important;
+}
+
+#addHiveMap {
+  z-index: 1;
+  position: relative;
+}
+
+:host ::ng-deep .leaflet-control-zoom a {
+  background-color: white;
+  color: black;
+}
+
+:host ::ng-deep .dark .leaflet-control-zoom a {
+  background-color: #27272a;
+  color: white;
+  border-color: rgba(255, 255, 255, 0.1);
+}
