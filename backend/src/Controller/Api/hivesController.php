@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Hive;
 use App\Repository\UserRepository;
 use App\Security\Authenticated;
+use Doctrine\Common\Util\Debug;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,6 +28,10 @@ final class hivesController extends AbstractController
         try {
             $email = $request->get('jwt_email');
             $content = json_decode($request->getContent(), true);
+            foreach($content as $key => $value) {
+                $logger->debug("the key {$key} in api_hives_create {$value}");
+            }
+
             $name = $content['name'];
             $lng = $content['lng'];
             $lat = $content['lat'];
