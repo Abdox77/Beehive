@@ -67,7 +67,7 @@ export class AddHiveModelComponent implements OnInit, OnDestroy, OnChanges {
 
         setTimeout(() => {
             this.map.invalidateSize();
-        }, 100);
+        }, 10);
     }
 
     private onMapClick(e: L.LeafletMouseEvent): void {
