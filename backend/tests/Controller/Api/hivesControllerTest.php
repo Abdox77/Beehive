@@ -4,7 +4,7 @@ namespace App\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class Api/hivesControllerTest extends WebTestCase
+final class hivesControllerTest extends WebTestCase
 {
     public function testIndex(): void
     {
