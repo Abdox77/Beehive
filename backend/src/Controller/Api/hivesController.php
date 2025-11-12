@@ -5,7 +5,6 @@ namespace App\Controller\Api;
 use App\Entity\Hive;
 use App\Repository\UserRepository;
 use App\Security\Authenticated;
-use Doctrine\Common\Util\Debug;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
