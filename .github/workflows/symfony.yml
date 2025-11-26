@@ -37,19 +37,11 @@ jobs:
 
     - uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
-
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+        php-version: '8.3'
+        extensions: mbstring, xml, pdo, pdo_pgsql, intl
 
     - name: Install Dependencies
-      run: composer update -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
     - name: Create Database Schema
       run: php bin/console doctrine:schema:create --env=test
