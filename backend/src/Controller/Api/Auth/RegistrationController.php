@@ -25,15 +25,14 @@ final class RegistrationController extends AbstractController
     {
         try {
             $data = json_decode($request->getContent(), true);
-
-            foreach ($data as $key => $value) {
-                $this->logger->info("the key : {$key} and the value is {$value}");
-            }
+            // foreach ($data as $key => $value) {
+            //     $this->logger->info("the key : {$key} and the value is {$value}");
+            // }
 
             if (!isset($data['email']) || !isset($data['password']) || !isset($data['user']))
             {
                 return new JsonResponse(['error'=> 'missing registration info'],
-                                 Response::HTTP_BAD_REQUEST);
+                                 Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             $email = $data['email'];
