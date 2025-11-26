@@ -97,7 +97,10 @@ final class hivesController extends AbstractController
         }
         catch (\Exception $e) {
             return new JsonResponse(
-            ['error'=> 'Internal Server Error' . ' ' . $e->getMessage() ],
+            [
+                'success' => false,
+                'message' => 'Internal Server Error'
+            ],
             Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -172,10 +175,10 @@ final class hivesController extends AbstractController
 
             $user = $userRepository->findOneByEmail($email);
             if (!$user) {
-                return new JsonResponse(
-                    ['error' => 'Bad Request'],
-                    Response::HTTP_NOT_FOUND
-                );
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'User was not found'
+                ],Response::HTTP_UNAUTHORIZED);
             }
 
             $hiveRepository = $entityManager->getRepository(Hive::class);
@@ -226,7 +229,7 @@ final class hivesController extends AbstractController
                 return new JsonResponse([
                     'success' => false,
                     'message' => 'User was not found'
-                ],Response::HTTP_NOT_FOUND);
+                ],Response::HTTP_UNAUTHORIZED);
             }
 
             $content = json_decode($request->getContent(), true);
