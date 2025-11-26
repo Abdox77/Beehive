@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\HiveRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -12,6 +14,7 @@ class Hive
 
     public function __construct()
     {
+        $this->interventions = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -32,6 +35,10 @@ class Hive
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
+
+    #[ORM\OneToMany(mappedBy: 'hive', targetEntity: Intervention::class, cascade: ['persist'])]
+    private Collection $interventions;
+
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'hives')]
     #[ORM\JoinColumn(nullable: false)]
@@ -73,5 +80,22 @@ class Hive
 
     public function setLng(?float $lng): void {
         $this->lng = $lng;
+    }
+
+    /**
+    * @return Collection<int, Intervention>
+    */
+    public function getIntervention(): Collection 
+    {
+        return $this->interventions;
+    }
+
+    public function addIntervention(Intervention $intervention): static 
+    {
+        if (!$this->interventions->contains($intervention)) {
+            $this->interventions->add($intervention);
+            $intervention->setHive($this);
+        }
+        return $this;
     }
 }
