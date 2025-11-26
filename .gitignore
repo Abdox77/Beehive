@@ -3,7 +3,6 @@
 .cache/
 
 .env.local
-.env.test
 .env.*.local
 
 .thoughts
