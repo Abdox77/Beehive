@@ -28,8 +28,18 @@ final class hivesController extends AbstractController
         try {
             $email = $request->get('jwt_email');
             $content = json_decode($request->getContent(), true);
-            foreach($content as $key => $value) {
-                $logger->debug("the key {$key} in api_hives_create {$value}");
+            // foreach($content as $key => $value) {
+            //     $logger->debug("the key {$key} in api_hives_create {$value}");
+            // }
+
+            if (!isset($content['name']) || !isset($content['lng']) || !isset($content['lat']))
+            {
+                return new JsonResponse([
+                        'success' => false,
+                        'message' => 'invalid request'
+                    ],
+                    Response::HTTP_BAD_REQUEST
+                );
             }
 
             $name = $content['name'];
@@ -279,7 +289,8 @@ final class hivesController extends AbstractController
             return new JsonResponse(
             [
                 'success' => false,
-                'message'=> 'Internal Server Error' . ' ' . $e->getMessage() ],
+                'message'=> 'Internal Server Error'
+            ],
             Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
