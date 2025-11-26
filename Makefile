@@ -1,7 +1,5 @@
-
 FRONTEND_DIR = frontend
 BACKEND_DIR = backend
-
 
 all: front back
 
@@ -23,7 +21,6 @@ migration:
 
 cache-clear:
 	cd $(BACKEND_DIR) && php bin/console cache:clear
-
 
 schema-validate:
 	cd $(BACKEND_DIR) && php bin/console doctrine:schema:validate

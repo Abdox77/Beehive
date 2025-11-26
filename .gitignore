@@ -3,9 +3,11 @@
 .cache/
 
 .env.local
+.env.test
 .env.*.local
 
 .thoughts
+.thoughts.md
 ./backend/.thoughts
 .todoS
 UI-design/
@@ -34,6 +36,8 @@ var/
 config/*.json
 **/config.json
 logs/
+
+
 
 *.db
 

@@ -26,38 +26,49 @@ final class LoginController extends AbstractController
     #[Route(path:'/login', name:'_login', methods: ['POST'])]
     public function login(Request $request): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        if ($data === null || ($data && !is_array($data))) {
-            return new JsonResponse(['error' => 'Error invalid request'], Response::HTTP_BAD_REQUEST);
-        }
-        $this->logger->info('The email is'. $data['email'] .'and the password is'. $data['password']);
-        
-        $email = $data['email'];
-        $password = $data['password'];
-        $user = $this->em->getRepository(User::class)->findOneBy(['email'=> $email]);
-        if ($user === null)
-        {
-            return new JsonResponse(['error'=> 'user was not found'], 
-                                Response::HTTP_NOT_FOUND);
-        }
-        
-        if(!password_verify($password, $user->getPassword()))
-        {
-            return new JsonResponse(['error'=> 'invalid password'], 
+        try {
+            $data = json_decode($request->getContent(), true);
+            if ($data === null || !is_array($data) || !isset($data['email']) || !isset($data['password'])) 
+            {
+                return new JsonResponse(['error' => 'Error invalid request'], Response::HTTP_BAD_REQUEST);
+            }
+            // $this->logger->info('The email is'. $data['email'] .'and the password is'. $data['password']);
+            
+            $email = $data['email'];
+            $password = $data['password'];
+            $user = $this->em->getRepository(User::class)->findOneBy(['email'=> $email]);
+            if ($user === null)
+            {
+                return new JsonResponse(['error'=> 'user was not found'], 
                                     Response::HTTP_UNAUTHORIZED);
+            }
+            
+            if(!password_verify($password, $user->getPassword()))
+            {
+                return new JsonResponse(['error'=> 'invalid password'], 
+                                        Response::HTTP_UNAUTHORIZED);
+            }
+            $payload = [
+                    'jwt_usr_id' => $user->getId(), 
+                    'jwt_email' => $user->getEmail()
+                ];
+            $token = $this->jwtManager->createToken($payload);
+            
+            return new JsonResponse(
+                [ 'success' => true , 
+                        'message' => 'you\'re loged in',
+                        'token' => $token],
+                Response::HTTP_OK
+            );
         }
-        $payload = [
-                'jwt_usr_id' => $user->getId(), 
-                'jwt_email' => $user->getEmail()
-            ];
-        $token = $this->jwtManager->createToken($payload);
-        
-        return new JsonResponse(
-            [ 'success' => true , 
-                    'message' => 'you\'re loged in',
-                    'token' => $token],
-            Response::HTTP_OK
-        );
+        catch (\Exception $e) {
+            return new JsonResponse(
+            [
+                'success' => false,
+                'message'=> 'Internal Server Error' 
+            ],
+            Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
