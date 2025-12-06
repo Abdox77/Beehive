@@ -1,0 +1,30 @@
+/* Remove Leaflet's default popup styling */
+:host ::ng-deep .leaflet-popup-content-wrapper {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+:host ::ng-deep .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+:host ::ng-deep .leaflet-popup-tip {
+  background: #221d10 !important; /* Match your dark background */
+}
+
+/* Light mode tip */
+:host ::ng-deep .leaflet-popup-tip {
+  background: #f8f8f6 !important; /* Match your light background */
+}
+
+/* Ensure material icons render correctly */
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24;
+}

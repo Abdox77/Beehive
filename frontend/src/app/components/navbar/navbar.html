@@ -1,5 +1,4 @@
-<header class="border-b border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 backdrop-blur">
-  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+<header class="border-b border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 backdrop-blur relative z-[9999]">  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
     <!-- Logo -->
     <a href="/" class="flex items-center gap-2">
       <span class="text-primary-500 inline-flex h-12 w-12" aria-hidden="true">
@@ -15,7 +14,7 @@
     </div>
 
     <!-- Profile -->
-    <div class="relative">
+    <div class="relative z-[10000]">
       <button
         #menuButton
         type="button"
@@ -30,11 +29,11 @@
         </svg>
       </button>
 
-      @if (profileMenuOpen) {
+    @if (profileMenuOpen) {
         <div
           #menuPanel
           role="menu"
-          class="absolute right-0 mt-2 w-48 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-zinc-900 p-1 shadow-card z-50">
+          class="absolute right-0 mt-2 w-48 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-zinc-900 p-1 shadow-card z-[10000]">
           <button class="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-zinc-800" role="menuitem" (click)="onSettings()">
             Settings
           </button>

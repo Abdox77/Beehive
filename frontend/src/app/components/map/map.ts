@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ViewContainerRef, ComponentRef } from '@angular/core';
 import * as L from 'leaflet';
 import { HttpClient } from '@angular/common/http';
+import { Intervention } from '../intervention/intervention';
 
 interface Hive {
     id: number;
@@ -14,7 +15,7 @@ const BACKEND_URL = 'http://localhost:8000';
 
 @Component({
   selector: 'app-map',
-  imports: [],
+  imports: [ ],
   templateUrl: './map.html',
   styleUrl: './map.css'
 })
@@ -23,7 +24,11 @@ export class Map {
     private markers: L.Marker[] = [];
     private hives: Hive[] = [];
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private vrc: ViewContainerRef
+    ) 
+    { }
 
     ngOnInit(): void {
         this.loadHives();
@@ -75,15 +80,32 @@ export class Map {
 
         this.hives.forEach(hive => {
             const marker = L.marker([hive.lat, hive.lng], { icon: hiveIcon })
-                .addTo(this.map)
-                .bindPopup(`
-                    <div class="font-display">
-                        <h3 class="font-semibold text-lg">${hive.name}</h3>
-                        <p class="text-sm opacity-70">ID: ${hive.id}</p>
-                        <p class="text-xs opacity-60">Lat: ${hive.lat.toFixed(6)}, Lng: ${hive.lng.toFixed(6)}</p>
-                    </div>
-                `);
+                .addTo(this.map);
 
+                let componentRef : ComponentRef<Intervention> | null = null;
+                marker.bindPopup(() => {
+                    componentRef = this.vrc.createComponent(Intervention);
+                    componentRef.instance.hiveId = hive.id;
+                    componentRef.instance.closePopup.subscribe(() => {
+                        marker.closePopup();
+                    });
+                    componentRef.changeDetectorRef.detectChanges();
+                    return componentRef.location.nativeElement;
+                },
+                {
+                    minWidth: 550, 
+                    maxWidth: 550,
+                    offset: [0, -20],
+                    closeButton: false
+                });
+
+                marker.on('popupclose', () => {
+                    if (componentRef)
+                    {
+                        componentRef.destroy();
+                        componentRef = null;
+                    }
+                });
                 this.markers.push(marker);
         });
 
@@ -92,7 +114,6 @@ export class Map {
             this.map.fitBounds(group.getBounds().pad(0.1));
         }
     }
-
 
     public refreshHives(): void {
         this.loadHives();
