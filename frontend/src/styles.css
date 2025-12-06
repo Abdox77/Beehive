@@ -35,3 +35,9 @@
 .muted {
   @apply text-sm opacity-70;
 }
+
+.navbar-dropdown {
+  z-index: 10000 !important;
+  position: relative;
+}
+
