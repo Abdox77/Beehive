@@ -144,7 +144,13 @@ final class InterventionController extends AbstractController
 
             $intervention = $hive->getIntervention();
             $interventions = [];
-            foreach($intervention as $i) {
+
+            $interventionArray = $intervention->toArray();
+            usort($interventionArray, function($a, $b) {
+                return $b->getCreatedAt() <=> $a->getCreatedAt();
+            });
+            
+            foreach($interventionArray as $i) {
                 $interventions[] = [
                     'id' => $i->getId(),
                     'note' => $i->getNote(),
