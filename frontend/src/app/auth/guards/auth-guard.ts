@@ -1,16 +1,21 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { map, take } from 'rxjs/operators';
 
 export const authGuard = () => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
-    if (authService.isLoggerdIn === true)
-    {
-        console.log(`The user is logged in`);
-        return true;
-    }
-    console.log(`You're being redirected to /auth/login`);
-    return router.parseUrl('/auth/login');
+    return authService.currentUser$.pipe(
+        take(1),
+        map(user => {
+            if (user || authService.isLoggerdIn) {
+                console.log(`The user is logged in`);
+                return true;
+            }
+            console.log(`You're being redirected to /auth/login`);
+            return router.parseUrl('/auth/login');
+        })
+    );
 };

@@ -20,13 +20,15 @@ export class AuthService {
     public currentUser$ = this.currentUserSubject.asObservable();
 
     constructor(private http: HttpClient) {
+        const token = localStorage.getItem('token');
         const user = localStorage.getItem(this.STORAGE_KEY);
-        if (user) {
+        if (token && user) {
             try {
                 this.currentUserSubject.next(JSON.parse(user) as User);
             }
             catch {
                 localStorage.removeItem(this.STORAGE_KEY);
+                localStorage.removeItem('token');
             }
         }
     }
