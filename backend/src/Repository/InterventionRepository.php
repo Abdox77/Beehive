@@ -18,6 +18,16 @@ class InterventionRepository extends ServiceEntityRepository
         parent::__construct($registry, Intervention::class);
     }
 
+    public function findByHiveOrderByDate(Hive $hive): array
+    {
+        return $this->createQueryBuilder('i')
+            ->where('i.hive = :hive')
+            ->setParameter('hive', $hive)
+            ->orderBy('i.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();            
+    }
+
     //    /**
     //     * @return Intervention[] Returns an array of Intervention objects
     //     */

@@ -15,7 +15,7 @@ const BACKEND_URL = 'http://localhost:8000';
 
 @Component({
   selector: 'app-map',
-  imports: [ ],
+  imports: [],
   templateUrl: './map.html',
   styleUrl: './map.css'
 })
@@ -90,6 +90,9 @@ export class Map {
                         marker.closePopup();
                     });
                     componentRef.changeDetectorRef.detectChanges();
+                    setTimeout(() => {
+                        componentRef?.changeDetectorRef.detectChanges();
+                    }, 0);
                     return componentRef.location.nativeElement;
                 },
                 {
