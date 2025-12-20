@@ -1,0 +1,12 @@
+.hive-list-container {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.hive-item {
+    user-select: none;
+}
+
+.hive-item:active {
+    cursor: grabbing;
+}

@@ -1,0 +1,52 @@
+<div 
+    class="trash-bin fixed bottom-8 right-8 p-6 rounded-2xl shadow-lg transition-all z-[9998] flex flex-col items-center gap-1"
+    [class.bg-red-500]="isDragOver"
+    [class.bg-gray-200]="!isDragOver"
+    [class.dark:bg-red-600]="isDragOver"
+    [class.dark:bg-zinc-700]="!isDragOver"
+    [class.scale-125]="isDragOver"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)">
+    <span 
+        class="material-symbols-outlined text-4xl transition-colors"
+        [class.text-white]="isDragOver"
+        [class.text-gray-600]="!isDragOver"
+        [class.dark:text-gray-300]="!isDragOver">
+        delete
+    </span>
+
+</div>
+
+@if (showDeleteConfirm) {
+    <div class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50" (click)="cancelDelete()">
+        <div class="bg-white dark:bg-zinc-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" (click)="$event.stopPropagation()">
+            <div class="flex items-start gap-4 mb-4">
+                <div class="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <span class="material-symbols-outlined text-red-600 dark:text-red-400">warning</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-2">Confirm Deletion</h3>
+                    <p class="text-subtle-light dark:text-subtle-dark mb-2">
+                        Are you sure you want to delete <strong>{{ hiveToDelete?.name }}</strong>?
+                    </p>
+                    <p class="text-sm text-red-600 dark:text-red-400">
+                        This will permanently delete all interventions and harvests associated with this hive.
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button 
+                    (click)="cancelDelete()"
+                    class="px-4 py-2 rounded-lg border border-primary/20 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
+                    Cancel
+                </button>
+                <button 
+                    (click)="confirmDelete()"
+                    class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+}
