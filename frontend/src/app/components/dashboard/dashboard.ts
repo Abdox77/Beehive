@@ -3,24 +3,34 @@ import { CommonModule } from '@angular/common';
 import { NavbarComponent } from '../../components/navbar/navbar';
 import { Map } from '../../components/map/map';
 import { AddHiveModelComponent } from '../add-hive-model-component/add-hive-model-component';
+import { HiveListComponent } from '../hive-list-component/hive-list-component';
+import { TrashBinComponent } from '../trash-bin-component/trash-bin-component';
 import { AuthService } from '../../auth/services/auth.service';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 
-
 const BACKEND_URL = 'http://localhost:8000';
+
+interface Hive {
+    id: number;
+    name: string;
+    lat: number;
+    lng: number;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [ CommonModule, NavbarComponent, Map, AddHiveModelComponent ],
+  imports: [ CommonModule, NavbarComponent, Map, AddHiveModelComponent, HiveListComponent, TrashBinComponent ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css']
 })
 export class DashboardComponent {
     showAddHiveModal = false;
+    hives: Hive[] = [];
 
     @ViewChild(Map) mapComponent?: Map;
+    @ViewChild('trashBin') trashBinComponent?: TrashBinComponent;
 
     constructor(
         private authService: AuthService,
@@ -32,7 +42,6 @@ export class DashboardComponent {
         this.showAddHiveModal = true;
     }
 
-    
     onCloseModal() {
         this.showAddHiveModal = false;
     }
@@ -43,7 +52,6 @@ export class DashboardComponent {
             headers: { Authorization: `Bearer ${token}` }
         }).subscribe({
             next: (response) => {
-                console.log('Hive created: ' , response);
                 this.showAddHiveModal = false;
                 this.mapComponent?.refreshHives();
             },
@@ -53,12 +61,25 @@ export class DashboardComponent {
         });
     }
 
+    onHiveDeleted(hiveId: number) {
+        this.mapComponent?.refreshHives();
+    }
+
+    onHivesLoaded(hives: Hive[]) {
+        this.hives = hives;
+    }
+
+    onHiveDroppedOnTrash(hive: Hive) {
+        if (this.trashBinComponent) {
+            this.trashBinComponent.onHiveDroppedFromMap(hive);
+        }
+    }
+
     onThemeToggle() {
         document.documentElement.classList.toggle('dark');
     }
 
     onOpenSettings() {
-        console.log('Open settings');
     }
 
     onLogout() {
