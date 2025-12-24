@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\Hive;
+use App\Entity\Harvest;
 use App\Repository\UserRepository;
 use App\Security\Authenticated;
 use Doctrine\Common\Util\Debug;
@@ -204,16 +205,14 @@ final class hivesController extends AbstractController
         }
     }
 
-
-    #[Route('/api/hive/{id}', name: 'api_hives_update', methods: ['PUT'])]
-    public function updateHive(
+    #[Route('/api/hive/{id}/harvest', name: 'api_hives_create_harvest', methods: ['POST'])]
+    public function createHarvest(
         int $id,
         UserRepository $userRepository,
         EntityManagerInterface $entityManager,
         Request $request,
         LoggerInterface $logger
-    ): JsonResponse
-    {
+    ) : JsonResponse {
         try {
             $email = $request->get('jwt_email');
             if (empty($email)) {
@@ -240,61 +239,138 @@ final class hivesController extends AbstractController
                     'message'=> 'Invalid JSON format'
                 ],Response::HTTP_BAD_REQUEST);
             }
-            if (!isset($content['lat']) || !isset($content['lng']) || !isset($content['name'])) {
-                return new JsonResponse([
-                    'success'=> false,
-                    'message'=> 'Bad request, missing elements'
-                ],Response::HTTP_BAD_REQUEST);
-            }
-
-            $name = $content['name'];
-            $lat = floatval($content['lat']);
-            $lng = floatval($content['lng']);
-            if ($lng < -90 || $lng > 90 || $lat > 180 || $lat < -180) {
+            
+            if (!isset($content['date']) || !isset($content['weightG'])) {
                 return new JsonResponse([
                     'success' => false,
-                    'message' => 'Invalid value for latitude or longitude'
-                ],Response::HTTP_NOT_FOUND);
+                    'message' => 'Missing required fields: date and weightG'
+                ], Response::HTTP_BAD_REQUEST);
             }
 
             $hive = $entityManager->getRepository(Hive::class)->find($id);
             if (!$hive) {
                 return new JsonResponse([
                     'success' => false,
-                    'message' => 'Hive was not found'
-                ],Response::HTTP_NOT_FOUND);
+                    'message' => 'Hive not found'
+                ], Response::HTTP_NOT_FOUND);
             }
-            if($hive->getOwner()->getId() != $user->getId()) {
+            
+            if ($hive->getOwner()->getId() !== $user->getId()) {
                 return new JsonResponse([
                     'success' => false,
                     'message' => 'Forbidden: You do not own this hive'
-                ],Response::HTTP_FORBIDDEN);
+                ], Response::HTTP_FORBIDDEN);
             }
 
-            $hive->setLat($lat);
-            $hive->setLng($lng);
-            $hive->setName($name);
+            $weightG = intval($content['weightG']);
+            if ($weightG < 0) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Weight must be positive or zero'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            try {
+                $date = new \DateTime($content['date']);
+            } catch (\Exception $e) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Invalid date format'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $harvest = new Harvest();
+            $harvest->setDate($date);
+            $harvest->setWeightG($weightG);
+            $harvest->setHive($hive);
+
+            $entityManager->persist($harvest);
             $entityManager->flush();
-            return new JsonResponse(
-                [
-                    'success' => true,
-                    'message' => 'Hive update successfully',
-                    'hive' => [ 
-                        'id' => $id,
-                        'name' => $hive->getName(),
-                        'lat' => $hive->getLat(),
-                        'lng' => $hive->getLng(),
-                        'owner' => $user->getEmail()
-                    ]
-                ],Response::HTTP_OK);
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Harvest created successfully',
+                'harvest' => [
+                    'id' => $harvest->getId(),
+                    'date' => $harvest->getDate()->format('Y-m-d'),
+                    'weightG' => $harvest->getWeightG(),
+                    'hiveId' => $hive->getId()
+                ]
+            ], Response::HTTP_CREATED);
+
         }
         catch (\Exception $e) {
-            return new JsonResponse(
-            [
+            return new JsonResponse([
                 'success' => false,
-                'message'=> 'Internal Server Error'
-            ],
-            Response::HTTP_INTERNAL_SERVER_ERROR);
+                'message' => 'Internal Server Error'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    #[Route('/api/hive/{id}/harvests', name: 'api_hives_get_harvests', methods: ['GET'])]
+    public function getHarvests(
+        int $id,
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager,
+        Request $request
+    ) : JsonResponse {
+        try {
+            $email = $request->get('jwt_email');
+            if (empty($email)) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $user = $userRepository->findOneByEmail($email);
+            if (!$user) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'User not found'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $hive = $entityManager->getRepository(Hive::class)->find($id);
+            if (!$hive) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Hive not found'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            if ($hive->getOwner()->getId() !== $user->getId()) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Forbidden'
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            $harvests = $hive->getHarvest();
+            $harvestsData = [];
+            $totalWeightG = 0;
+
+            foreach ($harvests as $harvest) {
+                $harvestsData[] = [
+                    'id' => $harvest->getId(),
+                    'date' => $harvest->getDate()->format('Y-m-d'),
+                    'weightG' => $harvest->getWeightG()
+                ];
+                $totalWeightG += $harvest->getWeightG();
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'harvests' => $harvestsData,
+                'totalWeightKg' => round($totalWeightG / 1000, 2)
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Internal Server Error'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

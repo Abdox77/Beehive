@@ -203,73 +203,6 @@ final class hivesControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
     }
 
-    public function testUpdateHiveWithValidData(): void
-    {
-        $client = static::createClient();
-        $client->request(
-            'POST',
-            '/api/hive',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
-                'name' => 'Hive To Update',
-                'lat' => 45.5,
-                'lng' => -73.5
-            ])
-        );
-
-        $createData = json_decode($client->getResponse()->getContent(), true);
-        $hiveId = $createData['hive']['id'];
-
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
-            'PUT',
-            '/api/hive/' . $hiveId,
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
-                'name' => 'Updated Hive Name',
-                'lat' => 46.0,
-                'lng' => -74.0
-            ])
-        );
-
-        self::assertResponseIsSuccessful();
-
-        $data = json_decode($client->getResponse()->getContent(), true);
-        self::assertEquals('Updated Hive Name', $data['hive']['name']);
-        self::assertEquals(46.0, $data['hive']['lat']);
-        self::assertEquals(-74.0, $data['hive']['lng']);
-    }
-
-    public function testUpdateHiveWithoutAuth(): void
-    {
-        $client = static::createClient();
-        $client->request(
-            'PUT',
-            '/api/hive/1',
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode([
-                'name' => 'Updated Name',
-                'lat' => 46.0,
-                'lng' => -74.0
-            ])
-        );
-
-        self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
-    }
-
     public function testUpdateNonExistentHive(): void
     {
         $client = static::createClient();
@@ -290,26 +223,6 @@ final class hivesControllerTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-    }
-
-    public function testUpdateHiveWithMissingFields(): void
-    {
-        $client = static::createClient();
-        $client->request(
-            'PUT',
-            '/api/hive/1',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
-                'name' => 'Only Name'
-            ])
-        );
-
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
     }
 
     public function testDeleteHiveWithAuth(): void
@@ -381,5 +294,340 @@ final class hivesControllerTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    public function testCreateHarvestWithValidData(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'name' => 'Harvest Test Hive',
+                'lat' => 45.5,
+                'lng' => -73.5
+            ])
+        );
+
+        $hiveData = json_decode($client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/' . $hiveId,
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => '2025-12-24',
+                'weightG' => 5000
+            ])
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertTrue($data['success']);
+        self::assertArrayHasKey('harvest', $data);
+        self::assertEquals(5000, $data['harvest']['weightG']);
+        self::assertEquals('2025-12-24', $data['harvest']['date']);
+    }
+
+    public function testCreateHarvestWithoutAuth(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/1',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode([
+                'date' => '2025-12-24',
+                'weightG' => 5000
+            ])
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+    }
+
+    public function testCreateHarvestWithMissingFields(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/1',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => '2025-12-24'
+            ])
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+    }
+
+    public function testCreateHarvestWithInvalidDate(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/1',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => 'invalid-date',
+                'weightG' => 5000
+            ])
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+    }
+
+    public function testCreateHarvestWithNegativeWeight(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'name' => 'Negative Weight Test Hive',
+                'lat' => 45.5,
+                'lng' => -73.5
+            ])
+        );
+
+        $hiveData = json_decode($client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/' . $hiveId,
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => '2025-12-24',
+                'weightG' => -100
+            ])
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+    }
+
+    public function testCreateHarvestForNonExistentHive(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/99999',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => '2025-12-24',
+                'weightG' => 5000
+            ])
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    public function testGetHarvestsWithValidHive(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'name' => 'Get Harvests Test Hive',
+                'lat' => 45.5,
+                'lng' => -73.5
+            ])
+        );
+
+        $hiveData = json_decode($client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/' . $hiveId,
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => '2025-12-24',
+                'weightG' => 3000
+            ])
+        );
+
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+        $client->request(
+            'GET',
+            '/api/hive/' . $hiveId . '/harvests',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ]
+        );
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertTrue($data['success']);
+        self::assertArrayHasKey('harvests', $data);
+        self::assertArrayHasKey('totalWeightKg', $data);
+        self::assertIsArray($data['harvests']);
+        self::assertGreaterThan(0, count($data['harvests']));
+    }
+
+    public function testGetHarvestsWithoutAuth(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'GET',
+            '/api/hive/1/harvests',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json']
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+    }
+
+    public function testGetHarvestsForNonExistentHive(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'GET',
+            '/api/hive/99999/harvests',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ]
+        );
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    public function testGetHarvestsTotalWeightCalculation(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'name' => 'Total Weight Test Hive',
+                'lat' => 45.5,
+                'lng' => -73.5
+            ])
+        );
+
+        $hiveData = json_decode($client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/' . $hiveId,
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => '2025-12-20',
+                'weightG' => 2000
+            ])
+        );
+
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/hive/' . $hiveId,
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ],
+            json_encode([
+                'date' => '2025-12-21',
+                'weightG' => 3000
+            ])
+        );
+
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+        $client->request(
+            'GET',
+            '/api/hive/' . $hiveId . '/harvests',
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
+            ]
+        );
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertEquals(5.0, $data['totalWeightKg']); 
     }
 }
