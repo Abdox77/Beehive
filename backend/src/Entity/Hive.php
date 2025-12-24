@@ -15,6 +15,7 @@ class Hive
     public function __construct()
     {
         $this->interventions = new ArrayCollection();
+        $this->harvests = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -39,10 +40,13 @@ class Hive
     #[ORM\OneToMany(mappedBy: 'hive', targetEntity: Intervention::class, cascade: ['persist'])]
     private Collection $interventions;
 
+    #[ORM\OneToMany(mappedBy: 'hive', targetEntity: Harvest::class, cascade: ['persist', 'remove'])]
+    private Collection $harvests;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'hives')]
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
+
 
     public function setOwner(?User $owner): void {
         $this->owner = $owner;
@@ -95,6 +99,23 @@ class Hive
         if (!$this->interventions->contains($intervention)) {
             $this->interventions->add($intervention);
             $intervention->setHive($this);
+        }
+        return $this;
+    }
+    
+    /**
+     * @return Collection<int, Harvest>
+     */
+    public function getHarvest(): Collection
+    {
+        return $this->harvests;
+    }
+
+    public function addHarvest(Harvest $harvest): static
+    {
+        if (!$this->harvests->contains($harvest)) {
+            $this->harvests->add($harvest);
+            $harvest->setHive($this);
         }
         return $this;
     }
