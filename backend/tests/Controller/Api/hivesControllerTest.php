@@ -406,7 +406,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/' . $hiveId,
+            '/api/hive/' . $hiveId . '/harvest',
             [],
             [],
             [
@@ -469,7 +469,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/' . $hiveId,
+            '/api/hive/' . $hiveId . '/harvest',
             [],
             [],
             [
@@ -561,7 +561,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/' . $hiveId,
+            '/api/hive/' . $hiveId . '/harvest',
             [],
             [],
             [
@@ -578,7 +578,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/' . $hiveId,
+            '/api/hive/' . $hiveId . '/harvest',
             [],
             [],
             [
