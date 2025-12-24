@@ -29,9 +29,6 @@ final class hivesController extends AbstractController
         try {
             $email = $request->get('jwt_email');
             $content = json_decode($request->getContent(), true);
-            // foreach($content as $key => $value) {
-            //     $logger->debug("the key {$key} in api_hives_create {$value}");
-            // }
 
             if (!isset($content['name']) || !isset($content['lng']) || !isset($content['lat']))
             {

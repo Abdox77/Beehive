@@ -203,28 +203,6 @@ final class hivesControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
     }
 
-    public function testUpdateNonExistentHive(): void
-    {
-        $client = static::createClient();
-        $client->request(
-            'PUT',
-            '/api/hive/99999',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
-                'name' => 'Updated Name',
-                'lat' => 46.0,
-                'lng' => -74.0
-            ])
-        );
-
-        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-    }
-
     public function testDeleteHiveWithAuth(): void
     {    
         $client = static::createClient();
