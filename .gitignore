@@ -27,6 +27,7 @@ subject.pdf
 npm-debug.log
 yarn-error.log
 
+backend/unittest-output.txt
 node_modules/
 vendor/
 var/

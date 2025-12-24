@@ -326,7 +326,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/1',
+            '/api/hive/1/harvest',
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
@@ -344,7 +344,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/1',
+            '/api/hive/1/harvest',
             [],
             [],
             [
@@ -364,7 +364,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/1',
+            '/api/hive/1/harvest',
             [],
             [],
             [
@@ -427,7 +427,7 @@ final class hivesControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request(
             'POST',
-            '/api/hive/99999',
+            '/api/hive/99999/harvest',
             [],
             [],
             [
