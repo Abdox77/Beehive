@@ -38,12 +38,13 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-between">
-        <a routerLink="/auth/forgot-password" class="text-sm font-medium text-primary-600 hover:text-primary-700">Forgot your password?</a>
-      </div>
-
-      <button type="submit" [disabled]="loginForm.invalid || loading" class="btn-primary w-full">
-        @if (loading) { <span>Processing...</span> } @else { <span>Login</span> }
+      <button type="submit" [disabled]="loginForm.invalid || loading" class="btn-primary w-full flex items-center justify-center gap-2">
+        @if (loading) {
+          <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          <span>Connecting...</span>
+        } @else {
+          <span>Login</span>
+        }
       </button>
     </form>
 

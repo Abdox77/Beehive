@@ -25,9 +25,6 @@ final class RegistrationController extends AbstractController
     {
         try {
             $data = json_decode($request->getContent(), true);
-            // foreach ($data as $key => $value) {
-            //     $this->logger->info("the key : {$key} and the value is {$value}");
-            // }
 
             if (!isset($data['email']) || !isset($data['password']) || !isset($data['user']))
             {
@@ -50,14 +47,6 @@ final class RegistrationController extends AbstractController
             $user->setPassword($password_hash);
             $errors = $validator->validate($user);
             if ($errors->count() > 0) {
-                // $messages = [];
-                // foreach ($errors as $violation) {
-                //     $messages[] = [
-                //         'field' => $violation->getPropertyPath(),
-                //         'message' => $violation->getMessage(),
-                //     ];
-                // }
-                // return new JsonResponse(['errors' => $messages], Response::HTTP_BAD_REQUEST);
                 throw new \Exception('the credentials were not validated');
             }
 

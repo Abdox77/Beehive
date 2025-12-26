@@ -15,11 +15,6 @@ class JwtManager {
         $this->secretkey = $secretkey;
     }
 
-    /**
-     * Summary of createToken
-     * @param mixed $payload
-     * @return string $jwtToken
-     */
     public function createToken($payload): string
     {
         $now = time();
@@ -28,23 +23,27 @@ class JwtManager {
             'exp' => $now + $this->ttl
         ];
         $payload = array_merge($payloadHead, $payload);
+        
+        $this->logger->debug('Creating token', [
+            'iat' => $payloadHead['iat'],
+            'exp' => $payloadHead['exp'],
+            'ttl_seconds' => $this->ttl,
+            'expires_at' => date('Y-m-d H:i:s', $payloadHead['exp'])
+        ]);
+        
         $base64UrlHeader = $this->base64UrlEncode(json_encode([ "alg" => "HS256", "typ" => "JWT"], JSON_UNESCAPED_SLASHES));
         $base64UrlPayload = $this->base64UrlEncode(json_encode( $payload, JSON_UNESCAPED_SLASHES));
         $signatureBin = hash_hmac("sha256", $base64UrlHeader . '.' . $base64UrlPayload, $this->secretkey, true);
         $base64UrlSignature = $this->base64UrlEncode($signatureBin);
         return $base64UrlHeader . '.' . $base64UrlPayload . '.' . $base64UrlSignature;
     }
- 
-    /**
-     * 
-     * @param string $jwtToken
-     * @return bool $isValid
-     */
+
     public function validateToken(string $token): bool
     {
         $parts = explode('.', $token);
         if (count($parts) !== 3)
         {
+            $this->logger->warning('Token validation failed: invalid format');
             return false;
         }
         
@@ -52,31 +51,44 @@ class JwtManager {
         $payload = $this->base64UrlDecode($b64p);
         $payload = json_decode($payload, true);
 
-        // $this->logger->debug('payload values', [
-        //     'values' => array_values($payload ?? []),
-        // ]);
-        // $this->logger->debug('Payload keys', [
-        //     'keys' => array_keys($payload ?? []),
-        // ]);
         if (!isset($payload['exp']) || !isset($payload['iat']))
         {
+            $this->logger->warning('Token validation failed: missing exp or iat');
             return false;
         }
 
-        if ($payload['exp'] < time())
+        $now = time();
+        $exp = $payload['exp'];
+        
+        $this->logger->debug('Token validation', [
+            'now' => $now,
+            'exp' => $exp,
+            'now_date' => date('Y-m-d H:i:s', $now),
+            'exp_date' => date('Y-m-d H:i:s', $exp),
+            'is_expired' => $exp < $now,
+            'seconds_remaining' => $exp - $now
+        ]);
+
+        if ($exp < $now)
         {
+            $this->logger->info('Token expired', [
+                'expired_seconds_ago' => $now - $exp
+            ]);
             return false;
         }
+        
         $b64s = $this->base64UrlDecode($b64s); 
         $expectedSignature = hash_hmac("sha256", $b64h . '.' . $b64p, $this->secretkey, true);
-        return hash_equals($expectedSignature, $b64s);
+        
+        $signatureValid = hash_equals($expectedSignature, $b64s);
+        
+        if (!$signatureValid) {
+            $this->logger->warning('Token validation failed: invalid signature');
+        }
+        
+        return $signatureValid;
     }
 
-    /**
-     * Summary of decodeToken
-     * @param string $token
-     * @return array|null
-     */
     public function decodeToken(string $token): ?array 
     {
         $parts = explode('.', $token);

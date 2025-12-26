@@ -44,8 +44,7 @@ export class HiveListComponent {
             next: () => {
                 this.hiveDeleted.emit(this.hiveToDelete!.id);
                 this.closeDeleteConfirm();
-            },
-            error: (error) => console.error('Error deleting hive:', error)
+            }
         });
     }
 

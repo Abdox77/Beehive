@@ -49,10 +49,6 @@ export class RegisterComponent {
         this.loading = true;
 
         const { fullName, email, password } = this.registerForm.value;
-        // console.log(`the fullName is ${fullName} => the email is  ${email} => the password is ${password}`);
-        console.log(JSON.stringify(fullName));
-        console.log(JSON.stringify(email));
-        console.log(JSON.stringify(password));
 
         this.authService.register({ user: fullName, email, password })
             .subscribe({
