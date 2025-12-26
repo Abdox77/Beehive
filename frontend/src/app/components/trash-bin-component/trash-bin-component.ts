@@ -41,7 +41,6 @@ export class TrashBinComponent implements OnInit, OnDestroy {
         this.elementRef.nativeElement.removeEventListener('markerDragOver', this.markerDragOverHandler);
     }
 
-    // Called when a hive is dropped from the map via Leaflet drag
     onHiveDroppedFromMap(hive: any): void {
         this.ngZone.run(() => {
             this.hiveToDelete = hive;
@@ -82,8 +81,7 @@ export class TrashBinComponent implements OnInit, OnDestroy {
             next: () => {
                 this.hiveDeleted.emit(this.hiveToDelete.id);
                 this.closeDeleteConfirm();
-            },
-            error: (error) => console.error('Error deleting hive:', error)
+            }
         });
     }
 

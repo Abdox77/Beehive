@@ -45,14 +45,19 @@ export class LoginComponent {
             .pipe(finalize(() => this.loading = false))
             .subscribe({
                 next: res => this.collectAndStoreToken(res),
-                error: err => this.error = err.error?.message || 'Login failed'
+                error: err => {
+                    if (err.status === 0) {
+                        this.error = err.error?.message || 'Cannot connect to server. Is the backend running?';
+                    } else {
+                        this.error = err.error?.message || 'Login failed';
+                    }
+                }
             });
     }
 
     collectAndStoreToken(res: any) {
         const token = res?.token;
         if (token) {
-            console.log(`logged in and the token is : ${token}`);
             localStorage.setItem('token', res['token']);
             this.router.navigate(['/dashboard']);
         }

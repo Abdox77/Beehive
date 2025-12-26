@@ -1,8 +1,6 @@
 <div class="min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
     <app-navbar 
         (addHiveClicked)="onAddHive()"
-        (themeToggled)="onThemeToggle()"
-        (settingsClicked)="onOpenSettings()"
         (logoutClicked)="onLogout()">
     </app-navbar>
 
@@ -10,7 +8,8 @@
         <div class="w-80 border-r border-primary/20 dark:border-primary/30 overflow-y-auto">
             <app-hive-list 
                 [hives]="hives"
-                (hiveDeleted)="onHiveDeleted($event)">
+                (hiveDeleted)="onHiveDeleted($event)"
+                (hiveSelected)="onHiveSelected($event)">
             </app-hive-list>
         </div>
 

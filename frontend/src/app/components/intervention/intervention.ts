@@ -1,97 +1,112 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectorRef, NgZone } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 
 const BACKEND_URL = 'http://localhost:8000';
 
 export interface InterventionData {
-    id: number;
-    note: string;
-    createdAt: {
-        date: string;
-        timezone_type: number;
-        timezone: string;
-    };
-    hiveId: number;
+  id: number;
+  note: string;
+  createdAt: {
+    date: string;
+  };
 }
 
 @Component({
   selector: 'app-intervention',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './intervention.html',
   styleUrl: './intervention.css'
 })
-export class Intervention {
-    @Input() hiveId: number = 0;
-    @Output() closePopup = new EventEmitter<void>();
+export class Intervention implements OnInit, OnChanges {
+  @Input() hiveId: number = 0;
+  @Input() cachedData: InterventionData[] | null = null;
+  @Output() closePopup = new EventEmitter<void>();
+  @Output() openHarvest = new EventEmitter<void>();
+  @Output() dataLoaded = new EventEmitter<void>();
+  @Output() dataUpdated = new EventEmitter<InterventionData[]>();
 
-    showAddForm: boolean = false;
-    newInterventionDescription: string = '';
-    interventions: InterventionData[] = [];
+  interventions: InterventionData[] = [];
+  showAddForm: boolean = false;
+  newInterventionDescription: string = '';
+  isLoading: boolean = true;
 
-    constructor (
-        private http: HttpClient,
-        private cdr: ChangeDetectorRef,
-        private ngZone: NgZone
-    ) { }
+  constructor(private http: HttpClient) {}
 
-    ngOnInit() {
-        this.loadInterventions();
+  ngOnInit() {
+    if (this.cachedData) {
+      this.interventions = this.cachedData;
+      this.isLoading = false;
+      this.dataLoaded.emit();
+    } else {
+      this.loadInterventions();
     }
+  }
 
-    loadInterventions() {
-        const token = localStorage.getItem('token');
-        this.http.get<{ success: boolean; interventions: InterventionData[] }>(`${BACKEND_URL}/api/intervention/${this.hiveId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        }).subscribe({
-            next: (response) => {
-                this.interventions = response.interventions;
-                this.cdr.detectChanges();
-            },
-            error: (error) => console.error('Error loading interventions:', error)
-        });
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['cachedData'] && this.cachedData) {
+      this.interventions = this.cachedData;
+      this.isLoading = false;
     }
+  }
 
-    onAddInterventionClick() {
-        console.log('Button clicked! Current state:', this.showAddForm);
-        this.ngZone.run(() => {
-            this.showAddForm = true;
-            console.log('New state:', this.showAddForm);
-        });
-    }
-
-    onCancelAdd() {
-        console.log('Canceling...');
-        this.ngZone.run(() => {
-            this.showAddForm = false;
-            this.newInterventionDescription = '';
-        });
-    }
-
-    onSaveIntervention() {
-        if (!this.newInterventionDescription.trim()) {
-            return;
+  loadInterventions() {
+    this.isLoading = true;
+    const token = localStorage.getItem('token');
+    this.http.get<any>(`${BACKEND_URL}/api/intervention/${this.hiveId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.interventions = response.interventions;
+          this.dataUpdated.emit(this.interventions);
         }
+        this.isLoading = false;
+        this.dataLoaded.emit();
+      }
+    });
+  }
 
-        const data = {
-            note: this.newInterventionDescription
-        };
+  onAddInterventionClick() {
+    this.showAddForm = true;
+  }
 
-        const token = localStorage.getItem('token');
-        this.http.post(`${BACKEND_URL}/api/intervention/${this.hiveId}`, data, {
-            headers: { Authorization: `Bearer ${token}` }
-        }).subscribe({
-            next: () => {
-                this.showAddForm = false;
-                this.newInterventionDescription = '';
-                this.loadInterventions();
-            },
-            error: (error) => console.error('Error saving intervention:', error)
-        });
+  onCancelAdd() {
+    this.showAddForm = false;
+    this.newInterventionDescription = '';
+  }
+
+  onSaveIntervention() {
+    if (!this.newInterventionDescription.trim()) {
+      return;
     }
 
-    onClose() {
-        this.closePopup.emit();
-    }
+    const token = localStorage.getItem('token');
+    this.http.post<any>(`${BACKEND_URL}/api/intervention/${this.hiveId}`, {
+      note: this.newInterventionDescription
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.loadInterventions();
+          this.onCancelAdd();
+        }
+      }
+    });
+  }
+
+  private emitDataUpdate() {
+    this.dataUpdated.emit(this.interventions);
+  }
+
+  onClose() {
+    this.closePopup.emit();
+  }
+
+  onProductionClick() {
+    this.openHarvest.emit();
+  }
 }

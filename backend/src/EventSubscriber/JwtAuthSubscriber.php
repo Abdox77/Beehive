@@ -44,7 +44,6 @@ final class JwtAuthSubscriber implements EventSubscriberInterface
             $needAuth = \count($ref->getAttributes(Authenticated::class)) > 0;
             
             $this->logger->info('the array controller is empty, and the getAttributes is ');
-            // $this->logger->info($ref->getAttributes(Authenticated::class));
         }
         else
         {
@@ -53,17 +52,6 @@ final class JwtAuthSubscriber implements EventSubscriberInterface
             $refMethod = $ref->getMethod($method);
             $needAuth = \count($ref->getAttributes(Authenticated::class)) > 0
                     || \count($refMethod->getAttributes(Authenticated::class)) > 0;
-            
-            
-                //     $this->logger->info('the array controller is NOT empty, and the getAttributes is ');
-                // $this->logger->info('Array controller inspected', [
-                //     'class' => $refClass->getName(),
-                //     'method' => $method,
-                //     'class_has_authenticated' => $classHas,
-                //     'method_has_authenticated' => $methodHas,
-                //     'class_attrs' => array_map(fn($a) => $a->getName(), $refClass->getAttributes()),
-                //     'method_attrs' => array_map(fn($a) => $a->getName(), $refMethod->getAttributes()),
-                // ]);
         }
 
         if (!$needAuth)
@@ -104,8 +92,6 @@ final class JwtAuthSubscriber implements EventSubscriberInterface
             $this->logger->error('The header is missing ');
         }
         else {
-            // $this->logger->info('here\'s The header ');
-            // // $this->logger->info($header);
         }
 
         if ($header === null || !str_starts_with($header, 'Bearer'))

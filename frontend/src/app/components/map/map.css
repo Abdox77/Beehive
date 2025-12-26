@@ -8,11 +8,20 @@
   height: 100%;
   width: 100%;
 }
-
+/* 
 .intervention-popup .material-symbols-outlined {
           font-variation-settings:
           'FILL' 0,
           'wght' 400,
           'GRAD' 0,
           'opsz' 24
+} */
+
+:global(.leaflet-popup-content-wrapper) {
+  border-radius: 12px;
+  padding: 0;
+}
+
+:global(.leaflet-popup-content) {
+  margin: 0;
 }

@@ -11,10 +11,8 @@ export const authGuard = () => {
         take(1),
         map(user => {
             if (user || authService.isLoggerdIn) {
-                console.log(`The user is logged in`);
                 return true;
             }
-            console.log(`You're being redirected to /auth/login`);
             return router.parseUrl('/auth/login');
         })
     );

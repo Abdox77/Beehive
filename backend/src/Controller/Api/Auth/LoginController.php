@@ -32,7 +32,6 @@ final class LoginController extends AbstractController
             {
                 return new JsonResponse(['error' => 'Error invalid request'], Response::HTTP_BAD_REQUEST);
             }
-            // $this->logger->info('The email is'. $data['email'] .'and the password is'. $data['password']);
             
             $email = $data['email'];
             $password = $data['password'];
@@ -70,13 +69,5 @@ final class LoginController extends AbstractController
             Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    /**
-     * to refresh the token, to implement later on
-     */
-    // #[Route(path:'/refresh', name:'')]
-    // public function refresh(Request $request) {
-        
-    // }
 }
 

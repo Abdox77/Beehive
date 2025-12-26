@@ -15,7 +15,6 @@ final class ProfileController extends AbstractController
     #[Route(path: '/api/profile', name: 'app_profile', methods: ['POST'])]
     public function userProfile(Request $request): JsonResponse
     {
-        // just testing jwt auth
         return new JsonResponse([
             'succes' => 'you\'re now authenticated',
             'token' => $request->headers->get('jwt_claims')],

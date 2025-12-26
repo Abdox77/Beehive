@@ -1,7 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from '../../components/navbar/navbar';
-import { Map } from '../../components/map/map';
+import { MapComponent } from '../../components/map/map';
 import { AddHiveModelComponent } from '../add-hive-model-component/add-hive-model-component';
 import { HiveListComponent } from '../hive-list-component/hive-list-component';
 import { TrashBinComponent } from '../trash-bin-component/trash-bin-component';
@@ -21,7 +21,7 @@ interface Hive {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [ CommonModule, NavbarComponent, Map, AddHiveModelComponent, HiveListComponent, TrashBinComponent ],
+  imports: [ CommonModule, NavbarComponent, MapComponent, AddHiveModelComponent, HiveListComponent, TrashBinComponent ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css']
 })
@@ -29,7 +29,7 @@ export class DashboardComponent {
     showAddHiveModal = false;
     hives: Hive[] = [];
 
-    @ViewChild(Map) mapComponent?: Map;
+    @ViewChild(MapComponent) mapComponent?: MapComponent;
     @ViewChild('trashBin') trashBinComponent?: TrashBinComponent;
 
     constructor(
@@ -54,9 +54,6 @@ export class DashboardComponent {
             next: (response) => {
                 this.showAddHiveModal = false;
                 this.mapComponent?.refreshHives();
-            },
-            error: (error) => {
-                console.error('Error creating hive: ', error);
             }
         });
     }
@@ -75,15 +72,14 @@ export class DashboardComponent {
         }
     }
 
-    onThemeToggle() {
-        document.documentElement.classList.toggle('dark');
-    }
-
-    onOpenSettings() {
+    onHiveSelected(hive: Hive) {
+        if (this.mapComponent) {
+            this.mapComponent.openHiveDialog(hive.id);
+        }
     }
 
     onLogout() {
         this.authService.logout();
-        this.router.navigate(['/auth/login']);
+        this.router.navigate(['/login']);
     }
 }

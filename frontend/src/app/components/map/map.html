@@ -1,1 +1,29 @@
-<div id="map" class="h-full w-full"></div>
+<div id="map" class="w-full h-full rounded-xl"></div>
+
+@if (showInterventionDialog && selectedHiveId !== null) {
+  <div class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50" (click)="onCloseDialog()">
+    <div (click)="$event.stopPropagation()">
+      <app-intervention
+        [hiveId]="selectedHiveId"
+        [cachedData]="cachedInterventions"
+        (closePopup)="onCloseDialog()"
+        (openHarvest)="onOpenHarvest()"
+        (dataUpdated)="onInterventionDataUpdated($event)">
+      </app-intervention>
+    </div>
+  </div>
+}
+
+@if (showHarvestDialog && selectedHiveId !== null) {
+  <div class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50" (click)="onCloseDialog()">
+    <div (click)="$event.stopPropagation()">
+      <app-harvest
+        [hiveId]="selectedHiveId"
+        [cachedData]="cachedHarvests"
+        (close)="onCloseDialog()"
+        (backToIntervention)="onBackToIntervention()"
+        (dataUpdated)="onHarvestDataUpdated($event)">
+      </app-harvest>
+    </div>
+  </div>
+}
