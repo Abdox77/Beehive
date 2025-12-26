@@ -1,7 +1,9 @@
-import { Component, ViewContainerRef, ComponentRef, Output, EventEmitter } from '@angular/core';
+import { Component, ViewContainerRef, Output, EventEmitter, AfterViewInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import * as L from 'leaflet';
 import { HttpClient } from '@angular/common/http';
-import { Intervention } from '../intervention/intervention';
+import { Intervention, InterventionData } from '../intervention/intervention';
+import { HarvestComponent, HarvestCacheData } from '../harvest/harvest';
+import { CommonModule } from '@angular/common';
 
 interface Hive {
     id: number;
@@ -14,12 +16,13 @@ const BACKEND_URL = 'http://localhost:8000';
 
 @Component({
   selector: 'app-map',
-  imports: [],
+  standalone: true,
+  imports: [CommonModule, Intervention, HarvestComponent],
   templateUrl: './map.html',
   styleUrl: './map.css'
 })
-export class Map {
-    private map: any;
+export class MapComponent implements AfterViewInit {
+    private map: L.Map | null = null;
     private markers: L.Marker[] = [];
     private hives: Hive[] = [];
     private draggedHive: Hive | null = null;
@@ -27,12 +30,24 @@ export class Map {
     private lastDragX: number = 0;
     private lastDragY: number = 0;
     
+    showHarvestDialog: boolean = false;
+    showInterventionDialog: boolean = false;
+    selectedHiveId: number | null = null;
+    
+    private interventionsCache: { [key: number]: InterventionData[] } = {};
+    private harvestsCache: { [key: number]: HarvestCacheData } = {};
+    
+    cachedInterventions: InterventionData[] | null = null;
+    cachedHarvests: HarvestCacheData | null = null;
+    
     @Output() hivesLoaded = new EventEmitter<Hive[]>();
     @Output() hiveDroppedOnTrash = new EventEmitter<Hive>();
 
     constructor(
         private http: HttpClient,
-        private vrc: ViewContainerRef
+        private vrc: ViewContainerRef,
+        private ngZone: NgZone,
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
@@ -44,15 +59,12 @@ export class Map {
     }
 
     private initMap(): void {
-        this.map = L.map('map').setView([49.845732, 3.262939], 10);
+        this.map = L.map('map').setView([46.6000, 1.888334], 6);
+
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(this.map);
-
-        if (this.hives.length > 0) {
-            this.addHiveMarkers();
-        }
     }
 
     private loadHives(): void {
@@ -66,13 +78,14 @@ export class Map {
                 if (this.map) {
                     this.addHiveMarkers();
                 }
-            },
-            error: (error) => console.error('Error loading hives: ', error)
+            }
         });
     }
 
     private addHiveMarkers(): void {
-        this.markers.forEach(marker => this.map.removeLayer(marker));
+        if (!this.map) return;
+        
+        this.markers.forEach(marker => this.map!.removeLayer(marker));
         this.markers = [];
 
         const hiveIcon = L.icon({
@@ -88,20 +101,26 @@ export class Map {
             const marker = L.marker([hive.lat, hive.lng], { 
                 icon: hiveIcon,
                 draggable: true 
-            }).addTo(this.map);
+            }).addTo(this.map!);
 
             const originalLatLng = marker.getLatLng();
 
+            marker.on('mouseover', () => {
+                this.preloadHiveData(hive.id);
+            });
+
             marker.on('dragstart', () => {
-                this.draggedHive = hive;
-                this.createDragGhost(hive);
-                const el = marker.getElement();
-                if (el) el.style.opacity = '0.5';
+                this.ngZone.run(() => {
+                    this.draggedHive = hive;
+                    this.createDragGhost(hive);
+                    const el = marker.getElement();
+                    if (el) el.style.opacity = '0.5';
+                });
             });
 
             marker.on('drag', (e: any) => {
-                const containerPoint = this.map.latLngToContainerPoint(e.latlng);
-                const mapContainer = this.map.getContainer().getBoundingClientRect();
+                const containerPoint = this.map!.latLngToContainerPoint(e.latlng);
+                const mapContainer = this.map!.getContainer().getBoundingClientRect();
                 
                 const markerScreenX = mapContainer.left + containerPoint.x;
                 const markerScreenY = mapContainer.top + containerPoint.y;
@@ -117,136 +136,192 @@ export class Map {
                 this.checkTrashBinHover(markerScreenX, markerScreenY);
             });
 
-            marker.on('dragend', (e: any) => {
-                const el = marker.getElement();
-                if (el) el.style.opacity = '1';
-                
-                const markerScreenX = this.lastDragX;
-                const markerScreenY = this.lastDragY;
-                
-                const isOver = this.isOverTrashBin(markerScreenX, markerScreenY);
-                
-                if (isOver && this.draggedHive) {
-                    this.hiveDroppedOnTrash.emit(this.draggedHive);
-                }
-                
-                this.resetTrashBinHighlight();
-                marker.setLatLng(originalLatLng);
-                
-                this.removeDragGhost();
-                this.draggedHive = null;
-                this.lastDragX = 0;
-                this.lastDragY = 0;
-            });
-
-            let componentRef: ComponentRef<Intervention> | null = null;
-            marker.bindPopup(() => {
-                componentRef = this.vrc.createComponent(Intervention);
-                componentRef.instance.hiveId = hive.id;
-                componentRef.instance.closePopup.subscribe(() => {
-                    marker.closePopup();
+            marker.on('dragend', () => {
+                this.ngZone.run(() => {
+                    const el = marker.getElement();
+                    if (el) el.style.opacity = '1';
+                    
+                    const markerScreenX = this.lastDragX;
+                    const markerScreenY = this.lastDragY;
+                    
+                    const isOver = this.isOverTrashBin(markerScreenX, markerScreenY);
+                    
+                    if (isOver && this.draggedHive) {
+                        this.hiveDroppedOnTrash.emit(this.draggedHive);
+                    }
+                    
+                    this.resetTrashBinHighlight();
+                    marker.setLatLng(originalLatLng);
+                    
+                    this.removeDragGhost();
+                    this.draggedHive = null;
+                    this.lastDragX = 0;
+                    this.lastDragY = 0;
                 });
-                componentRef.changeDetectorRef.detectChanges();
-                setTimeout(() => {
-                    componentRef?.changeDetectorRef.detectChanges();
-                }, 0);
-                return componentRef.location.nativeElement;
-            },
-            {
-                minWidth: 550,
-                maxWidth: 550,
-                offset: [0, -20],
-                closeButton: false
-            });
-
-            marker.on('popupclose', () => {
-                if (componentRef) {
-                    componentRef.destroy();
-                    componentRef = null;
-                }
             });
             
+            marker.on('click', () => {
+                this.ngZone.run(() => {
+                    this.openHiveDialogInternal(hive.id);
+                });
+            });
+
             this.markers.push(marker);
         });
 
-        if (this.markers.length > 0) {
+        if (this.markers.length === 1) {
+            const hive = this.hives[0];
+            this.map!.setView([hive.lat, hive.lng], 12);
+        } else if (this.markers.length > 1) {
             const group = L.featureGroup(this.markers);
-            this.map.fitBounds(group.getBounds().pad(0.1));
+            this.map!.fitBounds(group.getBounds().pad(0.1), {
+                maxZoom: 14
+            });
         }
     }
 
-    private checkTrashBinHover(x: number, y: number): void {
-        const trashBin = document.querySelector('app-trash-bin');
-        if (trashBin) {
-            const isOver = this.isOverTrashBin(x, y);
-            trashBin.dispatchEvent(new CustomEvent('markerDragOver', { 
-                detail: { isOver } 
-            }));
+    public openHiveDialog(hiveId: number): void {
+        this.preloadHiveData(hiveId);
+        this.openHiveDialogInternal(hiveId);
+        const hive = this.hives.find(h => h.id === hiveId);
+        if (hive && this.map) {
+            this.map.setView([hive.lat, hive.lng], 12);
         }
     }
 
-    private isOverTrashBin(x: number, y: number): boolean {
-        const elementsAtPoint = document.elementsFromPoint(x, y);
-        
-        const isOverTrash = elementsAtPoint.some(el => {
-            return el.tagName.toLowerCase() === 'app-trash-bin' || 
-                   el.closest('app-trash-bin') !== null;
-        });
-        
-        const trashBin = document.querySelector('app-trash-bin');
-        if (!trashBin) {
-            return isOverTrash;
+    private openHiveDialogInternal(hiveId: number): void {
+        this.selectedHiveId = hiveId;
+        if (this.interventionsCache[hiveId]) {
+            this.cachedInterventions = this.interventionsCache[hiveId];
+        } else {
+            this.cachedInterventions = null;
         }
-        
-        const trashRect = trashBin.getBoundingClientRect();
-        
-        const isOverByRect = x >= trashRect.left - 50 && 
-                             x <= trashRect.right + 50 &&
-                             y >= trashRect.top - 50 && 
-                             y <= trashRect.bottom + 50;
-        
-        return isOverTrash || isOverByRect;
+        this.showInterventionDialog = true;
+        this.showHarvestDialog = false;
+        this.cdr.detectChanges();
     }
 
-    private resetTrashBinHighlight(): void {
-        const trashBin = document.querySelector('app-trash-bin');
-        if (trashBin) {
-            trashBin.dispatchEvent(new CustomEvent('markerDragOver', { 
-                detail: { isOver: false } 
-            }));
+    private preloadHiveData(hiveId: number): void {
+        const token = localStorage.getItem('token');
+        
+        if (!this.interventionsCache[hiveId]) {
+            this.http.get<any>(`${BACKEND_URL}/api/intervention/${hiveId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).subscribe({
+                next: (response) => {
+                    if (response.success) {
+                        this.interventionsCache[hiveId] = response.interventions;
+                    }
+                }
+            });
+        }
+        
+        if (!this.harvestsCache[hiveId]) {
+            this.http.get<any>(`${BACKEND_URL}/api/hive/${hiveId}/harvests`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).subscribe({
+                next: (response) => {
+                    if (response.success) {
+                        this.harvestsCache[hiveId] = {
+                            harvests: response.harvests,
+                            totalWeightKg: response.totalWeightKg
+                        };
+                    }
+                }
+            });
+        }
+    }
+
+    onOpenHarvest() {
+        if (this.selectedHiveId && this.harvestsCache[this.selectedHiveId]) {
+            this.cachedHarvests = this.harvestsCache[this.selectedHiveId];
+        } else {
+            this.cachedHarvests = null;
+        }
+        this.showInterventionDialog = false;
+        this.showHarvestDialog = true;
+    }
+
+    onBackToIntervention() {
+        if (this.selectedHiveId && this.interventionsCache[this.selectedHiveId]) {
+            this.cachedInterventions = this.interventionsCache[this.selectedHiveId];
+        }
+        this.showHarvestDialog = false;
+        this.showInterventionDialog = true;
+    }
+
+    onCloseDialog() {
+        this.showHarvestDialog = false;
+        this.showInterventionDialog = false;
+        this.selectedHiveId = null;
+        this.cachedInterventions = null;
+        this.cachedHarvests = null;
+    }
+
+    onInterventionDataUpdated(interventions: InterventionData[]) {
+        if (this.selectedHiveId) {
+            this.interventionsCache[this.selectedHiveId] = interventions;
+            this.cachedInterventions = interventions;
+        }
+    }
+
+    onHarvestDataUpdated(data: HarvestCacheData) {
+        if (this.selectedHiveId) {
+            this.harvestsCache[this.selectedHiveId] = data;
+            this.cachedHarvests = data;
         }
     }
 
     public refreshHives(): void {
+        this.interventionsCache = {};
+        this.harvestsCache = {};
         this.loadHives();
-    }
-
-    public getHives(): Hive[] {
-        return this.hives;
     }
 
     private createDragGhost(hive: Hive): void {
         this.dragGhost = document.createElement('div');
+        this.dragGhost.className = 'fixed pointer-events-none z-[10000]';
         this.dragGhost.innerHTML = `
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png" 
-                 style="width: 25px; height: 41px;" />
-            <span style="position: absolute; left: 30px; top: 10px; background: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                ${hive.name}
-            </span>
-        `;
-        this.dragGhost.style.cssText = `
-            position: fixed;
-            pointer-events: none;
-            z-index: 10000;
-            opacity: 0.9;
+                 style="width: 25px; height: 41px; opacity: 0.8;" />
         `;
         document.body.appendChild(this.dragGhost);
     }
 
     private removeDragGhost(): void {
         if (this.dragGhost) {
-            document.body.removeChild(this.dragGhost);
+            this.dragGhost.remove();
             this.dragGhost = null;
+        }
+    }
+    
+    private checkTrashBinHover(x: number, y: number): void {
+        const trashBin = document.querySelector('.trash-bin');
+        if (trashBin) {
+            const rect = trashBin.getBoundingClientRect();
+            const isOver = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+            if (isOver) {
+                trashBin.classList.add('trash-hover');
+            } else {
+                trashBin.classList.remove('trash-hover');
+            }
+        }
+    }
+
+    private isOverTrashBin(x: number, y: number): boolean {
+        const trashBin = document.querySelector('.trash-bin');
+        if (trashBin) {
+            const rect = trashBin.getBoundingClientRect();
+            const isOver = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+            return isOver;
+        }
+        return false;
+    }
+
+    private resetTrashBinHighlight(): void {
+        const trashBin = document.querySelector('.trash-bin');
+        if (trashBin) {
+            trashBin.classList.remove('trash-hover');
         }
     }
 }

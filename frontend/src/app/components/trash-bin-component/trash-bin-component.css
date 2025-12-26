@@ -6,3 +6,13 @@
 .trash-bin:hover {
     transform: scale(1.05);
 }
+
+/* Highlight when marker is dragged over */
+.trash-bin.trash-hover {
+    background-color: #ef4444 !important;
+    transform: scale(1.25);
+}
+
+.trash-bin.trash-hover span {
+    color: white !important;
+}

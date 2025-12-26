@@ -33,12 +33,6 @@ export class AuthService {
         }
     }
 
-    /**
-     *
-     * @param email
-     * @param password
-     * @returns Observable<User>
-     */
     login(email: string, password: string): Observable<User> {
         const body =  {
           email: email,
@@ -53,11 +47,6 @@ export class AuthService {
         this.currentUserSubject.next(null);
     }
 
-    /**
-     *
-     * @param userData
-     * @returns
-     */
     register(userData: any): Observable<any> {
         return this.http.post<any>(`${BACKEND_URL}/api/auth/register`, userData).
         pipe(tap(user => this.storeUserData(user)));

@@ -58,28 +58,39 @@ class HiveRepository extends ServiceEntityRepository
     }
 
 
-//    /**
-//     * @return Hive[] Returns an array of Hive objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('h')
-//            ->andWhere('h.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('h.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function findWithHarvests(int $id): ?Hive
+    {
+        return $this->createQueryBuilder('h')
+            ->leftJoin('h.harvest', 'harvest')
+            ->addSelect('harvest')
+            ->where('h.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 
-//    public function findOneBySomeField($value): ?Hive
-//    {
-//        return $this->createQueryBuilder('h')
-//            ->andWhere('h.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+
+    public function findWithOwner(int $id): ?Hive
+    {
+        return $this->createQueryBuilder('h')
+            ->leftJoin('h.owner', 'owner')
+            ->addSelect('owner')
+            ->where('h.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findWithOwnerAndHarvests(int $id): ?Hive
+    {
+        return $this->createQueryBuilder('h')
+            ->leftJoin('h.owner', 'owner')
+            ->addSelect('owner')
+            ->leftJoin('h.harvest', 'harvest')
+            ->addSelect('harvest')
+            ->where('h.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }
