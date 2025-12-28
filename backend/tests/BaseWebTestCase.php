@@ -43,8 +43,25 @@ abstract class BaseWebTestCase extends WebTestCase
             'password' => $password,
         ]));
 
+        if ($this->client->getResponse()->getStatusCode() !== 200) {
+            $content = $this->client->getResponse()->getContent();
+            throw new \RuntimeException(
+                sprintf(
+                    'Login failed with status %d: %s',
+                    $this->client->getResponse()->getStatusCode(),
+                    $content
+                )
+            );
+        }
+
         $response = json_decode($this->client->getResponse()->getContent(), true);
-        return $response['token'] ?? null;
+        $token = $response['token'] ?? null;
+        
+        if ($token === null) {
+            throw new \RuntimeException('Login response did not contain a token');
+        }
+        
+        return $token;
     }
 
     protected function makeAuthenticatedRequest(string $method, string $uri, string $token, array $data = []): void
