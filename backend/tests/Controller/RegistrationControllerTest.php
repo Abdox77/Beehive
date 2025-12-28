@@ -21,7 +21,7 @@ final class RegistrationControllerTest extends WebTestCase
                 '/api/auth/register', 
                 [],
                 [],
-                [],
+                ['CONTENT_TYPE' => 'application/json'],
                 json_encode($userData));
         
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
@@ -37,7 +37,7 @@ final class RegistrationControllerTest extends WebTestCase
             '/api/auth/login',
             [],
             [],
-            [],
+            ['CONTENT_TYPE' => 'application/json'],
             json_encode([
                 'email' => $userData['email'],
                 'password' => $userData['password'],
@@ -45,6 +45,9 @@ final class RegistrationControllerTest extends WebTestCase
         );
 
         self::assertResponseIsSuccessful();
+        $response = json_decode($client->getResponse()->getContent(), true);
+        self::assertArrayHasKey('token', $response);
+        self::assertNotEmpty($response['token']);
     }
 
     public function testRegistrationWithMissingData(): void
@@ -54,7 +57,7 @@ final class RegistrationControllerTest extends WebTestCase
                 '/api/auth/register', 
                 [],
                 [],
-                [], 
+                ['CONTENT_TYPE' => 'application/json'], 
                 '{}');
         
         self::assertResponseStatusCodeSame(422);
