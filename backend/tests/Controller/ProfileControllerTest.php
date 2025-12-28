@@ -7,7 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class ProfileControllerTest extends BaseWebTestCase
 {
-    private string $token;
+    private ?string $token = null;
     private array $testUser = [
         'email' => 'profile@example.com',
         'username' => 'profileUser',

@@ -24,9 +24,4 @@ class UserRepository extends ServiceEntityRepository
         }
         return $user;
     }
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }
