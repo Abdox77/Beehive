@@ -4,8 +4,8 @@ namespace App\Controller\Api;
 
 use App\Entity\Hive;
 use App\Entity\Harvest;
+use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Security\Authenticated;
 use Doctrine\Common\Util\Debug;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -14,8 +14,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Authenticated]
+#[IsGranted('ROLE_USER')]
 final class hivesController extends AbstractController
 {
     #[Route('/api/hive', name: 'api_hives_create', methods: ['POST'])]
@@ -27,7 +28,15 @@ final class hivesController extends AbstractController
     ): JsonResponse
     {
         try {
-            $email = $request->get('jwt_email');
+            /** @var User $user */
+            $user = $this->getUser();
+            if (!$user) {
+                return new JsonResponse(
+                    ['error' => 'Unauthorized'],
+                    Response::HTTP_UNAUTHORIZED
+                );
+            }
+            
             $content = json_decode($request->getContent(), true);
 
             if (!isset($content['name']) || !isset($content['lng']) || !isset($content['lat']))
@@ -43,12 +52,7 @@ final class hivesController extends AbstractController
             $name = $content['name'];
             $lng = $content['lng'];
             $lat = $content['lat'];
-            if (empty($email)) {
-                return new JsonResponse(
-                    ['error' => 'Unauthorized'],
-                    Response::HTTP_UNAUTHORIZED
-                );
-            }
+            
             if (empty($name) || $lng === null || $lat === null)
             {
                 return new JsonResponse(
@@ -57,14 +61,6 @@ final class hivesController extends AbstractController
                 );
             }
             
-            $user = $userRepository->findUserByEmail($email);
-            if (null === $user) {
-                return new JsonResponse(
-                    ['error' => 'user was not found'],
-                    Response::HTTP_NOT_FOUND
-                );
-            }
-
             $lng = floatval($lng);
             $lat = floatval($lat);
             if ($lng < -180 || $lng > 180 || $lat > 90 || $lat < -90) {
@@ -113,20 +109,13 @@ final class hivesController extends AbstractController
     ): JsonResponse
     {
         try {
-            $email = $request->get('jwt_email');
-            if (empty($email)) {
+            /** @var User $user */
+            $user = $this->getUser();
+            if (!$user) {
                 return new JsonResponse([
                     'success' => false,
                     'message' => 'Unauthorized'
                 ], Response::HTTP_UNAUTHORIZED);
-            }
-
-            $user = $userRepository->findOneByEmail($email);
-            if (!$user) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'Bad Request'
-                ],Response::HTTP_BAD_REQUEST);
             }
 
             $hives = $user->getHives();
@@ -164,20 +153,13 @@ final class hivesController extends AbstractController
     ): JsonResponse
     {
         try {
-            $email = $request->get('jwt_email');
-            if (empty($email)) {
+            /** @var User $user */
+            $user = $this->getUser();
+            if (!$user) {
                 return new JsonResponse(
                     ['error' => 'Unauthorized'],
                     Response::HTTP_UNAUTHORIZED
                 );
-            }
-
-            $user = $userRepository->findOneByEmail($email);
-            if (!$user) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'User was not found'
-                ],Response::HTTP_UNAUTHORIZED);
             }
 
             $hiveRepository = $entityManager->getRepository(Hive::class);
@@ -211,22 +193,15 @@ final class hivesController extends AbstractController
         LoggerInterface $logger
     ) : JsonResponse {
         try {
-            $email = $request->get('jwt_email');
-            if (empty($email)) {
+            /** @var User $user */
+            $user = $this->getUser();
+            if (!$user) {
                 return new JsonResponse(
                     [
                         'success' => false,
                         'message' => 'Unauthorized'
                     ],
                     Response::HTTP_UNAUTHORIZED);
-            }
-
-            $user = $userRepository->findOneByEmail($email);
-            if (!$user) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'User was not found'
-                ],Response::HTTP_UNAUTHORIZED);
             }
 
             $content = json_decode($request->getContent(), true);
@@ -313,19 +288,12 @@ final class hivesController extends AbstractController
         Request $request
     ) : JsonResponse {
         try {
-            $email = $request->get('jwt_email');
-            if (empty($email)) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], Response::HTTP_UNAUTHORIZED);
-            }
-
-            $user = $userRepository->findOneByEmail($email);
+            /** @var User $user */
+            $user = $this->getUser();
             if (!$user) {
                 return new JsonResponse([
                     'success' => false,
-                    'message' => 'User not found'
+                    'message' => 'Unauthorized'
                 ], Response::HTTP_UNAUTHORIZED);
             }
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -51,13 +52,17 @@ export class RegisterComponent {
         const { fullName, email, password } = this.registerForm.value;
 
         this.authService.register({ user: fullName, email, password })
+            .pipe(finalize(() => this.loading = false))
             .subscribe({
                 next: () => {
                     this.router.navigate(['/auth/login']);
                 },
                 error: err => {
-                    this.error = err.error?.message || 'Registration failed. Please try again.';
-                    this.loading = false;
+                    if (err.status === 0) {
+                        this.error = 'Cannot connect to server. Please check if the backend is running.';
+                    } else {
+                        this.error = err.error?.message || 'Registration failed. Please try again.';
+                    }
                 }
             });
     }

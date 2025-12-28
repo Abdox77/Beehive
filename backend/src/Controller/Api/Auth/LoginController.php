@@ -3,15 +3,15 @@
 namespace App\Controller\Api\Auth;
 
 use App\Entity\User;
-use App\Middleware\JwtManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Security\Authenticated;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 
 #[Route('/api/auth', name: 'app_api_auth')]
@@ -19,7 +19,8 @@ final class LoginController extends AbstractController
 {
     public function __construct(
         private LoggerInterface $logger, 
-        private JwtManager $jwtManager,
+        private JWTTokenManagerInterface $jwtManager,
+        private UserPasswordHasherInterface $passwordHasher,
         private EntityManagerInterface $em) 
     { }
 
@@ -42,16 +43,13 @@ final class LoginController extends AbstractController
                                     Response::HTTP_UNAUTHORIZED);
             }
             
-            if(!password_verify($password, $user->getPassword()))
+            if(!$this->passwordHasher->isPasswordValid($user, $password))
             {
                 return new JsonResponse(['error'=> 'invalid password'], 
                                         Response::HTTP_UNAUTHORIZED);
             }
-            $payload = [
-                    'jwt_usr_id' => $user->getId(), 
-                    'jwt_email' => $user->getEmail()
-                ];
-            $token = $this->jwtManager->createToken($payload);
+            
+            $token = $this->jwtManager->create($user);
             
             return new JsonResponse(
                 [ 'success' => true , 
@@ -61,6 +59,7 @@ final class LoginController extends AbstractController
             );
         }
         catch (\Exception $e) {
+            $this->logger->error('Login error: ' . $e->getMessage());
             return new JsonResponse(
             [
                 'success' => false,
