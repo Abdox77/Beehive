@@ -2,15 +2,15 @@
 
 namespace App\Tests\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\BaseWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-final class hivesControllerTest extends WebTestCase
+final class HivesControllerTest extends BaseWebTestCase
 {
-    private static ?string $authToken = null;
-    private static ?int $createdHiveId = null;
+    private ?string $authToken = null;
+    private ?int $createdHiveId = null;
 
-    private static array $testUser = [
+    private array $testUser = [
         'user' => 'hiveTestUser',
         'email' => 'hivetest@example.com',
         'password' => 'PasswordIsStrong@2026'
@@ -18,75 +18,62 @@ final class hivesControllerTest extends WebTestCase
 
     protected function setUp(): void
     {
-        if (self::$authToken === null) {
-            $client = static::createClient();
-            $client->request(
-                'POST',
-                '/api/auth/register',
-                [],
-                [],
-                ['CONTENT_TYPE' => 'application/json'],
-                json_encode([
-                    'user' => self::$testUser['user'] . uniqid(),
-                    'email' => self::$testUser['email'],
-                    'password' => self::$testUser['password']
-                ])
-            );
-
-            self::ensureKernelShutdown();
-            $client = static::createClient();
-            $client->request(
-                'POST',
-                '/api/auth/login',
-                [],
-                [],
-                ['CONTENT_TYPE' => 'application/json'],
-                json_encode([
-                    'email' => self::$testUser['email'],
-                    'password' => self::$testUser['password']
-                ])
-            );
-
-            $data = json_decode($client->getResponse()->getContent(), true);
-            self::$authToken = $data['token'] ?? null;
-
-            self::ensureKernelShutdown();
-        }
+        parent::setUp();
+        
+        $this->entityManager->createQuery('DELETE FROM App\Entity\Harvest h WHERE h.hive IN (SELECT hv.id FROM App\Entity\Hive hv WHERE hv.owner IN (SELECT u.id FROM App\Entity\User u WHERE u.email = :email))')
+            ->setParameter('email', $this->testUser['email'])
+            ->execute();
+        
+        $this->entityManager->createQuery('DELETE FROM App\Entity\Intervention i WHERE i.hive IN (SELECT hv.id FROM App\Entity\Hive hv WHERE hv.owner IN (SELECT u.id FROM App\Entity\User u WHERE u.email = :email))')
+            ->setParameter('email', $this->testUser['email'])
+            ->execute();
+        
+        $this->entityManager->createQuery('DELETE FROM App\Entity\Hive h WHERE h.owner IN (SELECT u.id FROM App\Entity\User u WHERE u.email = :email)')
+            ->setParameter('email', $this->testUser['email'])
+            ->execute();
+        
+        $this->entityManager->createQuery('DELETE FROM App\Entity\User u WHERE u.email = :email')
+            ->setParameter('email', $this->testUser['email'])
+            ->execute();
+        
+        $this->createUser(
+            $this->testUser['email'],
+            $this->testUser['user'],
+            $this->testUser['password']
+        );
+        
+        $this->authToken = $this->getAuthToken(
+            $this->testUser['email'],
+            $this->testUser['password']
+        );
     }
 
     public function testCreateHiveWithValidData(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Test Hive',
                 'lat' => 45.5,
                 'lng' => -73.5
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
-        self::assertJson($client->getResponse()->getContent());
+        self::assertJson($this->client->getResponse()->getContent());
 
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertArrayHasKey('hive', $data);
         self::assertArrayHasKey('id', $data['hive']);
         self::assertEquals('Test Hive', $data['hive']['name']);
-        self::$createdHiveId = $data['hive']['id'];
+        $this->createdHiveId = $data['hive']['id'];
     }
 
     public function testCreateHiveWithoutAuth(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'POST',
             '/api/hive',
             [],
@@ -104,20 +91,14 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHiveWithMissingName(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'lat' => 45.5,
                 'lng' => -73.5
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -125,21 +106,15 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHiveWithInvalidLatitude(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Invalid Hive',
                 'lat' => 100,
                 'lng' => -73.5
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -147,21 +122,15 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHiveWithInvalidLongitude(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Invalid Hive',
                 'lat' => 45.5,
                 'lng' => 200
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -169,30 +138,23 @@ final class hivesControllerTest extends WebTestCase
 
     public function testGetHivesWithAuth(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'GET',
             '/api/hive',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ]
+            $this->authToken
         );
 
         self::assertResponseIsSuccessful();
-        self::assertJson($client->getResponse()->getContent());
+        self::assertJson($this->client->getResponse()->getContent());
 
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertArrayHasKey('hives', $data);
         self::assertIsArray($data['hives']);
     }
 
     public function testGetHivesWithoutAuth(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'GET',
             '/api/hive',
             [],
@@ -205,48 +167,34 @@ final class hivesControllerTest extends WebTestCase
 
     public function testDeleteHiveWithAuth(): void
     {    
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Hive To Delete',
                 'lat' => 45.5,
                 'lng' => -73.5
-            ])
+            ]
         );
 
-        $createData = json_decode($client->getResponse()->getContent(), true);
+        $createData = json_decode($this->client->getResponse()->getContent(), true);
         $hiveId = $createData['hive']['id'];
 
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'DELETE',
             '/api/hive/' . $hiveId,
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ]
+            $this->authToken
         );
 
         self::assertResponseIsSuccessful();
 
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertTrue($data['success']);
     }
     public function testDeleteHiveWithoutAuth(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'DELETE',
             '/api/hive/1',
             [],
@@ -259,16 +207,10 @@ final class hivesControllerTest extends WebTestCase
 
     public function testDeleteNonExistentHive(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'DELETE',
             '/api/hive/99999',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ]
+            $this->authToken
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
@@ -276,45 +218,32 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHarvestWithValidData(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Harvest Test Hive',
                 'lat' => 45.5,
                 'lng' => -73.5
-            ])
+            ]
         );
 
-        $hiveData = json_decode($client->getResponse()->getContent(), true);
+        $hiveData = json_decode($this->client->getResponse()->getContent(), true);
         $hiveId = $hiveData['hive']['id'];
 
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive/' . $hiveId . '/harvest',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'date' => '2025-12-24',
                 'weightG' => 5000
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertTrue($data['success']);
         self::assertArrayHasKey('harvest', $data);
         self::assertEquals(5000, $data['harvest']['weightG']);
@@ -323,8 +252,7 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHarvestWithoutAuth(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'POST',
             '/api/hive/1/harvest',
             [],
@@ -341,19 +269,27 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHarvestWithMissingFields(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
-            '/api/hive/1/harvest',
-            [],
-            [],
+            '/api/hive',
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
+                'name' => 'Missing Fields Test Hive',
+                'lat' => 45.5,
+                'lng' => -73.5
+            ]
+        );
+        
+        $hiveData = json_decode($this->client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+        
+        $this->makeAuthenticatedRequest(
+            'POST',
+            '/api/hive/' . $hiveId . '/harvest',
+            $this->authToken,
+            [
                 'date' => '2025-12-24'
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -361,20 +297,29 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHarvestWithInvalidDate(): void
     {
-        $client = static::createClient();
-        $client->request(
+        // Create a hive first
+        $this->makeAuthenticatedRequest(
             'POST',
-            '/api/hive/1/harvest',
-            [],
-            [],
+            '/api/hive',
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
+                'name' => 'Invalid Date Test Hive',
+                'lat' => 45.5,
+                'lng' => -73.5
+            ]
+        );
+        
+        $hiveData = json_decode($this->client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+        
+        $this->makeAuthenticatedRequest(
+            'POST',
+            '/api/hive/' . $hiveId . '/harvest',
+            $this->authToken,
+            [
                 'date' => 'invalid-date',
                 'weightG' => 5000
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -382,41 +327,28 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHarvestWithNegativeWeight(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Negative Weight Test Hive',
                 'lat' => 45.5,
                 'lng' => -73.5
-            ])
+            ]
         );
 
-        $hiveData = json_decode($client->getResponse()->getContent(), true);
+        $hiveData = json_decode($this->client->getResponse()->getContent(), true);
         $hiveId = $hiveData['hive']['id'];
 
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive/' . $hiveId . '/harvest',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'date' => '2025-12-24',
                 'weightG' => -100
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -424,20 +356,14 @@ final class hivesControllerTest extends WebTestCase
 
     public function testCreateHarvestForNonExistentHive(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive/99999/harvest',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'date' => '2025-12-24',
                 'weightG' => 5000
-            ])
+            ]
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
@@ -445,58 +371,38 @@ final class hivesControllerTest extends WebTestCase
 
     public function testGetHarvestsWithValidHive(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Get Harvests Test Hive',
                 'lat' => 45.5,
                 'lng' => -73.5
-            ])
-        );
-
-        $hiveData = json_decode($client->getResponse()->getContent(), true);
-        $hiveId = $hiveData['hive']['id'];
-
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
-            'POST',
-            '/api/hive/' . $hiveId . '/harvest',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
-                'date' => '2025-12-24',
-                'weightG' => 3000
-            ])
-        );
-
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
-            'GET',
-            '/api/hive/' . $hiveId . '/harvests',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
             ]
         );
 
+        $hiveData = json_decode($this->client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+
+        $this->makeAuthenticatedRequest(
+            'POST',
+            '/api/hive/' . $hiveId . '/harvest',
+            $this->authToken,
+            [
+                'date' => '2025-12-24',
+                'weightG' => 3000
+            ]
+        );
+
+        $this->makeAuthenticatedRequest(
+            'GET',
+            '/api/hive/' . $hiveId . '/harvests',
+            $this->authToken
+        );
+
         self::assertResponseIsSuccessful();
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertTrue($data['success']);
         self::assertArrayHasKey('harvests', $data);
         self::assertArrayHasKey('totalWeightKg', $data);
@@ -506,8 +412,7 @@ final class hivesControllerTest extends WebTestCase
 
     public function testGetHarvestsWithoutAuth(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'GET',
             '/api/hive/1/harvests',
             [],
@@ -520,16 +425,10 @@ final class hivesControllerTest extends WebTestCase
 
     public function testGetHarvestsForNonExistentHive(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'GET',
             '/api/hive/99999/harvests',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ]
+            $this->authToken
         );
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
@@ -537,75 +436,48 @@ final class hivesControllerTest extends WebTestCase
 
     public function testGetHarvestsTotalWeightCalculation(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
-            [],
-            [],
+            $this->authToken,
             [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
                 'name' => 'Total Weight Test Hive',
                 'lat' => 45.5,
                 'lng' => -73.5
-            ])
-        );
-
-        $hiveData = json_decode($client->getResponse()->getContent(), true);
-        $hiveId = $hiveData['hive']['id'];
-
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
-            'POST',
-            '/api/hive/' . $hiveId . '/harvest',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
-                'date' => '2025-12-20',
-                'weightG' => 2000
-            ])
-        );
-
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
-            'POST',
-            '/api/hive/' . $hiveId . '/harvest',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
-            ],
-            json_encode([
-                'date' => '2025-12-21',
-                'weightG' => 3000
-            ])
-        );
-
-        self::ensureKernelShutdown();
-        $client = static::createClient();
-        $client->request(
-            'GET',
-            '/api/hive/' . $hiveId . '/harvests',
-            [],
-            [],
-            [
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_AUTHORIZATION' => 'Bearer ' . self::$authToken
             ]
         );
 
+        $hiveData = json_decode($this->client->getResponse()->getContent(), true);
+        $hiveId = $hiveData['hive']['id'];
+
+        $this->makeAuthenticatedRequest(
+            'POST',
+            '/api/hive/' . $hiveId . '/harvest',
+            $this->authToken,
+            [
+                'date' => '2025-12-20',
+                'weightG' => 2000
+            ]
+        );
+
+        $this->makeAuthenticatedRequest(
+            'POST',
+            '/api/hive/' . $hiveId . '/harvest',
+            $this->authToken,
+            [
+                'date' => '2025-12-21',
+                'weightG' => 3000
+            ]
+        );
+
+        $this->makeAuthenticatedRequest(
+            'GET',
+            '/api/hive/' . $hiveId . '/harvests',
+            $this->authToken
+        );
+
         self::assertResponseIsSuccessful();
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertEquals(5.0, $data['totalWeightKg']); 
     }
 }

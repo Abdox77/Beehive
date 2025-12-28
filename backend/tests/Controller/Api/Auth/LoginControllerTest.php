@@ -2,45 +2,35 @@
 
 namespace App\Tests\Controller\Api\Auth;
 
-use PHPUnit\Framework\Attributes\Depends;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\BaseWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-
-final class LoginControllerTest extends WebTestCase
+final class LoginControllerTest extends BaseWebTestCase
 {
     private array $validUser = [
         'email' => 'logintest@example.com',
+        'username' => 'loginTestUser',
         'password' => 'PasswordIsStrong@2026'
     ];
 
-    private static bool $userCreated = false;
-
     protected function setUp(): void
     {
-        if (!self::$userCreated) {
-            $client = static::createClient();
-            $client->request(
-                'POST',
-                '/api/auth/register',
-                [],
-                [],
-                ['CONTENT_TYPE' => 'application/json'],
-                json_encode([
-                    'user' => 'loginTestUser' . uniqid(),
-                    'email' => $this->validUser['email'],
-                    'password' => $this->validUser['password']
-                ])
-            );
-            self::$userCreated = true;
-            self::ensureKernelShutdown();
-        }
+        parent::setUp();
+        
+        $this->entityManager->createQuery('DELETE FROM App\Entity\User u WHERE u.email = :email')
+            ->setParameter('email', $this->validUser['email'])
+            ->execute();
+        
+        $this->createUser(
+            $this->validUser['email'],
+            $this->validUser['username'],
+            $this->validUser['password']
+        );
     }
 
     public function testLoginWithValidCredentials(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'POST',
             '/api/auth/login',
             [],
@@ -53,16 +43,15 @@ final class LoginControllerTest extends WebTestCase
         );
 
         self::assertResponseIsSuccessful();
-        self::assertJson($client->getResponse()->getContent());
+        self::assertJson($this->client->getResponse()->getContent());
         
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertArrayHasKey('token', $data);
     }
 
     public function testLoginWithInvalidEmail(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'POST',
             '/api/auth/login',
             [],
@@ -79,8 +68,7 @@ final class LoginControllerTest extends WebTestCase
 
     public function testLoginWithInvalidPassword(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'POST',
             '/api/auth/login',
             [],
@@ -97,8 +85,7 @@ final class LoginControllerTest extends WebTestCase
 
     public function testLoginWithMissingCredentials(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'POST',
             '/api/auth/login',
             [],
@@ -112,8 +99,7 @@ final class LoginControllerTest extends WebTestCase
 
     public function testLoginWithMissingPassword(): void
     {
-        $client = static::createClient();
-        $client->request(
+        $this->client->request(
             'POST',
             '/api/auth/login',
             [],

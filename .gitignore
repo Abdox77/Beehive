@@ -41,3 +41,4 @@ logs/
 
 *.db
 
+backend/phpunit-output.txt
