@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs/operators';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { tap, timeout, catchError } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
 
 export interface User {
     id: number;
@@ -39,7 +39,16 @@ export class AuthService {
           password: password
         }
         return this.http.post<User>(`${BACKEND_URL}/api/auth/login`, body)
-        .pipe(tap(user => this.storeUserData(user)));
+        .pipe(
+            timeout(10000),
+            tap(user => this.storeUserData(user)),
+            catchError(err => {
+                if (err.name === 'TimeoutError') {
+                    return throwError(() => ({ status: 0, error: { message: 'Request timeout. Server might be down.' } }));
+                }
+                return throwError(() => err);
+            })
+        );
     }
 
     logout() {
@@ -49,7 +58,16 @@ export class AuthService {
 
     register(userData: any): Observable<any> {
         return this.http.post<any>(`${BACKEND_URL}/api/auth/register`, userData).
-        pipe(tap(user => this.storeUserData(user)));
+        pipe(
+            timeout(10000),
+            tap(user => this.storeUserData(user)),
+            catchError(err => {
+                if (err.name === 'TimeoutError') {
+                    return throwError(() => ({ status: 0, error: { message: 'Request timeout. Server might be down.' } }));
+                }
+                return throwError(() => err);
+            })
+        );
     }
 
 

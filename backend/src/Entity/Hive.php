@@ -37,10 +37,10 @@ class Hive
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
-    #[ORM\OneToMany(mappedBy: 'hive', targetEntity: Intervention::class, cascade: ['persist'])]
+    #[ORM\OneToMany(mappedBy: 'hive', targetEntity: Intervention::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $interventions;
 
-    #[ORM\OneToMany(mappedBy: 'hive', targetEntity: Harvest::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'hive', targetEntity: Harvest::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $harvests;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'hives')]

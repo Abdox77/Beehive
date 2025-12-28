@@ -25,3 +25,7 @@ migrations/*
 .DS_Store
 .vs_code
 .thoughts
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###

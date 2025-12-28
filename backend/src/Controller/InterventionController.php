@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Security\Authenticated;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use App\Entity\Hive;
@@ -13,9 +13,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 
-#[Authenticated]
+#[IsGranted('ROLE_USER')]
 final class InterventionController extends AbstractController
 {
     #[Route('/api/intervention/{id}', name: 'app_api_create_intervention', methods: ['POST'])]
@@ -28,22 +29,15 @@ final class InterventionController extends AbstractController
     ): JsonResponse
     {
         try {
-            $email = $request->get('jwt_email');
-            if (empty($email)) {
+            /** @var User $user */
+            $user = $this->getUser();
+            if (!$user) {
                 return new JsonResponse(
                     [
                         'success' => false,
                         'message' => 'Unauthorized'
                     ],
                     Response::HTTP_UNAUTHORIZED);
-            }
-
-            $user = $userRepository->findOneByEmail($email);
-            if (!$user) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'User was not found'
-                ],Response::HTTP_UNAUTHORIZED);
             }
 
             $content = json_decode($request->getContent(), true);
@@ -67,7 +61,7 @@ final class InterventionController extends AbstractController
                 return new JsonResponse([
                     'success' => false,
                     'message' => 'Forbidden: You do not own this hive'
-                ], Reponse::HTTP_FORBIDDEN);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $intervention = new Intervention();
@@ -109,22 +103,15 @@ final class InterventionController extends AbstractController
     ) :JsonResponse
     {
         try {
-            $email = $request->get('jwt_email');
-            if (empty($email)) {
+            /** @var User $user */
+            $user = $this->getUser();
+            if (!$user) {
                 return new JsonResponse(
                     [
                         'success' => false,
                         'message' => 'Unauthorized'
                     ],
                     Response::HTTP_UNAUTHORIZED);
-            }
-
-            $user = $userRepository->findOneByEmail($email);
-            if (!$user) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'User was not found'
-                ],Response::HTTP_UNAUTHORIZED);
             }
 
             $hive = $entityManager->getRepository(Hive::class)->find($id);
@@ -139,7 +126,7 @@ final class InterventionController extends AbstractController
                 return new JsonResponse([
                     'success' => false,
                     'message' => 'Forbidden: You do not own this hive'
-                ], Reponse::HTTP_FORBIDDEN);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $intervention = $hive->getIntervention();

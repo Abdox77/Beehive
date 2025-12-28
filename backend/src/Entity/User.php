@@ -7,10 +7,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 #[ORM\Table(name:"app_user")]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
 
     public function __construct()
@@ -36,7 +37,7 @@ class User
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
-    #[ORM\OneToMany(mappedBy:"owner", targetEntity: Hive::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy:"owner", targetEntity: Hive::class, cascade: ["persist", "remove"], orphanRemoval: true)]
     private Collection $hives;
 
 
@@ -113,5 +114,29 @@ class User
             $hive->setOwner(null);
         }
         return $this;
+    }
+
+    /**
+     * Returns the identifier for this user (e.g. email)
+     */
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * Returns the roles granted to the user.
+     */
+    public function getRoles(): array
+    {
+        return ['ROLE_USER'];
+    }
+
+    /**
+     * Removes sensitive data from the user.
+     */
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
     }
 }

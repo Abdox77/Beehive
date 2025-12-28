@@ -16,8 +16,5 @@ services:
     App\:
         resource: '../src/'
 
-    App\Middleware\JwtManager:
-        arguments: ['%env(JWT_PASSPHRASE)%']
-
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

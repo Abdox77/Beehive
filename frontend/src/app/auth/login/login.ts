@@ -47,7 +47,7 @@ export class LoginComponent {
                 next: res => this.collectAndStoreToken(res),
                 error: err => {
                     if (err.status === 0) {
-                        this.error = err.error?.message || 'Cannot connect to server. Is the backend running?';
+                        this.error = 'Cannot connect to server. Please check if the backend is running.';
                     } else {
                         this.error = err.error?.message || 'Login failed';
                     }
