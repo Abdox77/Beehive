@@ -297,7 +297,6 @@ final class HivesControllerTest extends BaseWebTestCase
 
     public function testCreateHarvestWithInvalidDate(): void
     {
-        // Create a hive first
         $this->makeAuthenticatedRequest(
             'POST',
             '/api/hive',
