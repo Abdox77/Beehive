@@ -43,29 +43,33 @@ jobs:
     - name: Install Dependencies
       run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
+    - name: Setup JWT directory
+      run: mkdir -p config/jwt
+
     - name: Generate JWT keys
       run: |
-        php bin/console lexik:jwt:generate-keypair --skip-if-exists
-      env:
-        JWT_PASSPHRASE: test_passphrase
-        APP_ENV: test
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
+        openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass pass:test_passphrase
+        openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout -passin pass:test_passphrase
+        chmod 644 config/jwt/private.pem config/jwt/public.pem
 
     - name: Create Database
       run: php bin/console doctrine:database:create --if-not-exists --env=test
       env:
         APP_ENV: test
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
+        JWT_PASSPHRASE: test_passphrase
 
     - name: Create Database Schema
       run: php bin/console doctrine:schema:create --env=test
       env:
         APP_ENV: test
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
+        JWT_PASSPHRASE: test_passphrase
 
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit
       env:
         APP_ENV: test
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
-      
+        JWT_PASSPHRASE: test_passphrase
+
