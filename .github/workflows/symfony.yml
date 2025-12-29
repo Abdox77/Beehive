@@ -48,14 +48,24 @@ jobs:
         php bin/console lexik:jwt:generate-keypair --skip-if-exists
       env:
         JWT_PASSPHRASE: test_passphrase
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive_test?serverVersion=15&charset=utf8
+        APP_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
+
+    - name: Create Database
+      run: php bin/console doctrine:database:create --if-not-exists --env=test
+      env:
+        APP_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
 
     - name: Create Database Schema
-      run: php bin/console doctrine:schema:create
+      run: php bin/console doctrine:schema:create --env=test
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive_test?serverVersion=15&charset=utf8
+        APP_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
 
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive_test?serverVersion=15&charset=utf8
+        APP_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/beehive?serverVersion=15&charset=utf8
+      
