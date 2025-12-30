@@ -25,14 +25,14 @@ export class AddHiveModelComponent implements OnInit, OnDestroy, OnChanges {
     constructor(private formBuilder: FormBuilder) {
         this.hiveForm = this.formBuilder.group({
             name: ['', Validators.required],
-            lat: [{ value: '', disabled: true }, [Validators.required, Validators.min(-90), Validators.max(90)]],
-            lng: [{ value: '', disabled: true }, [Validators.required, Validators.min(-180), Validators.max(180)]]
+            lat: ['', [Validators.required, Validators.min(-90), Validators.max(90)]],
+            lng: ['', [Validators.required, Validators.min(-180), Validators.max(180)]]
         });
     }
 
     ngOnInit() {
         if (this.isOpen) {
-            setTimeout(() => this.initMap(), 100);
+            setTimeout(() => this.initMap(), 300);
         }
     }
 
@@ -44,15 +44,34 @@ export class AddHiveModelComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes['isOpen'] && changes['isOpen'].currentValue && !changes['isOpen'].previousValue) {
-            setTimeout(() => this.initMap(), 100);
+        if (changes['isOpen']) {
+            if (changes['isOpen'].currentValue) {
+                this.loading = false;
+                setTimeout(() => this.initMap(), 300);
+            } else if (this.map) {
+                this.map.remove();
+                this.map = null;
+                this.marker = null;
+                this.loading = false;
+            }
         }
     }
 
     private initMap(): void {
         if (this.map) {
-            this.map.invalidateSize();
+            setTimeout(() => {
+                this.map.invalidateSize();
+            }, 100);
             return;
+        }
+        const container = document.getElementById('addHiveMap');
+        if (!container) {
+            console.warn('Map container not found');
+            return;
+        }
+
+        if ((container as any)._leaflet_id) {
+            (container as any)._leaflet_id = null;
         }
 
         this.map = L.map('addHiveMap').setView([46.6000, 1.888888], 6);
@@ -66,8 +85,16 @@ export class AddHiveModelComponent implements OnInit, OnDestroy, OnChanges {
         });
 
         setTimeout(() => {
-            this.map.invalidateSize();
-        }, 10);
+            if (this.map) {
+                this.map.invalidateSize();
+            }
+        }, 100);
+        
+        setTimeout(() => {
+            if (this.map) {
+                this.map.invalidateSize();
+            }
+        }, 500);
     }
 
     private onMapClick(e: L.LeafletMouseEvent): void {
@@ -77,7 +104,7 @@ export class AddHiveModelComponent implements OnInit, OnDestroy, OnChanges {
         }
 
         const icon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
             iconSize: [25, 41],
             iconAnchor: [12, 41],
@@ -91,6 +118,8 @@ export class AddHiveModelComponent implements OnInit, OnDestroy, OnChanges {
             lat: lat.toFixed(6),
             lng: lng.toFixed(6)
         });
+        this.hiveForm.markAsDirty();
+        this.hiveForm.updateValueAndValidity();
     }
     
     onSubmit() {
@@ -111,6 +140,7 @@ export class AddHiveModelComponent implements OnInit, OnDestroy, OnChanges {
     onClose() {
         this.hiveForm.reset();
         this.selectedLocation = null;
+        this.loading = false;
         if(this.marker) {
             this.map.removeLayer(this.marker);
             this.marker = null;

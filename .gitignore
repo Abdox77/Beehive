@@ -42,3 +42,4 @@ logs/
 *.db
 
 backend/phpunit-output.txt
+pass.txt
